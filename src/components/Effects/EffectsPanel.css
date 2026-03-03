@@ -1,0 +1,244 @@
+.effects-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  position: relative;
+}
+
+.effects-list {
+  padding: 0;
+  overflow: visible;
+  position: relative;
+}
+
+.effects-empty {
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.effect-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0;
+  margin-bottom: var(--space-1);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: visible;
+}
+
+.effect-name-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  background: var(--color-surface-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  transition: all var(--transition-fast);
+  min-height: 28px;
+}
+
+.effect-item:hover .effect-name-box {
+  background: var(--color-border-light);
+}
+
+.effect-item.selected .effect-name-box {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary);
+}
+
+.effect-item.selected .effect-name {
+  color: #9fe870;
+}
+
+.effect-item.selected .effect-select {
+  color: var(--color-primary);
+}
+
+.effect-item.selected .inline-opacity-input {
+  color: #9fe870;
+}
+
+.effect-item.selected .inline-opacity-percent {
+  color: #9fe870;
+}
+
+.effect-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.effect-select {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  padding: 0;
+  letter-spacing: 0.3px;
+}
+
+.effect-name {
+  flex: 1;
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.3px;
+  color: var(--color-text-primary);
+}
+
+.effect-select option {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.effect-action-btn {
+  background: var(--color-surface-secondary);
+  border: 1px solid var(--color-border-light);
+  padding: 4px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+}
+
+.effect-action-btn:hover {
+  background: var(--color-surface);
+  border-color: var(--color-primary);
+  color: var(--color-text-primary);
+}
+
+/* Effect Parameters Section - Inline Expandable */
+.effect-parameters {
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border-light);
+  margin-left: 0;
+  margin-right: 0;
+  margin-bottom: var(--space-1);
+  border-radius: var(--radius-sm);
+}
+
+/* Add Menu */
+.add-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 150px;
+  z-index: 1000;
+  padding: var(--space-2);
+}
+
+.add-menu-item {
+  width: 100%;
+  padding: var(--space-3);
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  font-family: inherit;
+}
+
+.add-menu-item:hover:not(:disabled) {
+  background: var(--color-surface-secondary);
+}
+
+.add-menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.parameter-icon-btn {
+  padding: var(--space-1);
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.parameter-icon-btn:hover {
+  background-color: var(--color-surface-secondary);
+  color: var(--color-text-primary);
+}
+
+/* Effect Modal Wrapper - removed as it interferes with positioning */
+
+/* Inline Opacity Control */
+.inline-opacity-control {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.inline-opacity-input {
+  width: 32px;
+  height: 20px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  font-family: inherit;
+  text-align: right;
+  padding: 0 2px;
+  outline: none;
+  cursor: ew-resize;
+  -moz-appearance: textfield;
+}
+
+.inline-opacity-input::-webkit-outer-spin-button,
+.inline-opacity-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.inline-opacity-input:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+}
+
+.inline-opacity-input:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+}
+
+.inline-opacity-percent {
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+}

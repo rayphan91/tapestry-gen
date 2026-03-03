@@ -1,0 +1,924 @@
+import React from 'react';
+import { useTapestryStore } from '@/store/useTapestryStore';
+import { useSwooshStore } from '@/store/useSwooshStore';
+import { Eye, EyeOff, ChevronDown, ChevronRight, Shuffle } from 'lucide-react';
+import { generateRandomSwoosh } from '@/utils/swooshGenerator';
+import { REGIONAL_GRADIENTS } from '@/types';
+import './EffectsPanel.css';
+
+type ItemType = 'grain' | 'scanlines' | 'veins' | 'splatter' | 'brushswooshs' | 'swoosh';
+
+// Utility function to get slider fill background
+const getSliderBackground = (value: number, min: number, max: number, theme?: string) => {
+  const percentage = ((value - min) / (max - min)) * 100;
+  const fillColor = theme === 'light' ? '#163300' : '#9fe870';
+  return `linear-gradient(to right, ${fillColor} 0%, ${fillColor} ${percentage}%, var(--color-border-light) ${percentage}%, var(--color-border-light) 100%)`;
+};
+
+interface LayerItem {
+  id: string;
+  type: ItemType;
+  enabled: boolean;
+  visible: boolean;
+  name?: string;
+}
+
+export const EffectsPanel: React.FC = () => {
+  const selectedRegion = useTapestryStore((state) => state.selectedRegion);
+  const showFilmGrain = useTapestryStore((state) => state.showFilmGrain);
+  const showScanlines = useTapestryStore((state) => state.showScanlines);
+  const showVeins = useTapestryStore((state) => state.showVeins);
+  const showSplatter = useTapestryStore((state) => state.showSplatter);
+  const showBrushStrokes = useTapestryStore((state) => state.showBrushStrokes);
+  const splatterLayers = useTapestryStore((state) => state.splatterLayers);
+  const toggleFilmGrain = useTapestryStore((state) => state.toggleFilmGrain);
+  const toggleScanlines = useTapestryStore((state) => state.toggleScanlines);
+  const toggleVeins = useTapestryStore((state) => state.toggleVeins);
+  const toggleSplatter = useTapestryStore((state) => state.toggleSplatter);
+  const toggleBrushStrokes = useTapestryStore((state) => state.toggleBrushStrokes);
+  const addSplatterLayer = useTapestryStore((state) => state.addSplatterLayer);
+  const removeSplatterLayer = useTapestryStore((state) => state.removeSplatterLayer);
+  const updateSplatterLayer = useTapestryStore((state) => state.updateSplatterLayer);
+  const filmGrainIntensity = useTapestryStore((state) => state.filmGrainIntensity);
+  const filmGrainOpacity = useTapestryStore((state) => state.filmGrainOpacity);
+  const filmGrainSize = useTapestryStore((state) => state.filmGrainSize);
+  const filmGrainBlendMode = useTapestryStore((state) => state.filmGrainBlendMode);
+  const scanlinesIntensity = useTapestryStore((state) => state.scanlinesIntensity);
+  const scanlinesOpacity = useTapestryStore((state) => state.scanlinesOpacity);
+  const scanlinesSpacing = useTapestryStore((state) => state.scanlinesSpacing);
+  const scanlinesThickness = useTapestryStore((state) => state.scanlinesThickness);
+  const scanlinesBlendMode = useTapestryStore((state) => state.scanlinesBlendMode);
+  const veinsIntensity = useTapestryStore((state) => state.veinsIntensity);
+  const veinsOpacity = useTapestryStore((state) => state.veinsOpacity);
+  const veinsScale = useTapestryStore((state) => state.veinsScale);
+  const veinsBlendMode = useTapestryStore((state) => state.veinsBlendMode);
+  const veinsColor = useTapestryStore((state) => state.veinsColor);
+  const veinsSeed = useTapestryStore((state) => state.veinsSeed);
+  const splatterIntensity = useTapestryStore((state) => state.splatterIntensity);
+  const splatterOpacity = useTapestryStore((state) => state.splatterOpacity);
+  const splatterScale = useTapestryStore((state) => state.splatterScale);
+  const splatterBlendMode = useTapestryStore((state) => state.splatterBlendMode);
+  const splatterColor = useTapestryStore((state) => state.splatterColor);
+  const splatterColor2 = useTapestryStore((state) => state.splatterColor2);
+  const splatterColor3 = useTapestryStore((state) => state.splatterColor3);
+  const splatterSeed = useTapestryStore((state) => state.splatterSeed);
+  const brushStrokesIntensity = useTapestryStore((state) => state.brushStrokesIntensity);
+  const brushStrokesOpacity = useTapestryStore((state) => state.brushStrokesOpacity);
+  const brushStrokesScale = useTapestryStore((state) => state.brushStrokesScale);
+  const brushStrokesBlendMode = useTapestryStore((state) => state.brushStrokesBlendMode);
+  const brushStrokesColor = useTapestryStore((state) => state.brushStrokesColor);
+  const brushStrokesColor2 = useTapestryStore((state) => state.brushStrokesColor2);
+  const brushStrokesColor3 = useTapestryStore((state) => state.brushStrokesColor3);
+  const brushStrokesSeed = useTapestryStore((state) => state.brushStrokesSeed);
+
+  // Swoosh/Stroke state
+  const swooshes = useSwooshStore((state) => state.swooshes);
+  const selectedSwooshId = useSwooshStore((state) => state.selectedSwooshId);
+  const selectSwoosh = useSwooshStore((state) => state.selectSwoosh);
+  const removeSwoosh = useSwooshStore((state) => state.removeSwoosh);
+  const addSwoosh = useSwooshStore((state) => state.addSwoosh);
+  const updateSwoosh = useSwooshStore((state) => state.updateSwoosh);
+  const canvasSize = useTapestryStore((state) => state.canvas.size);
+  const customDuotoneColors = useTapestryStore((state) => state.customDuotoneColors);
+
+  const setFilmGrainIntensity = useTapestryStore((state) => state.setFilmGrainIntensity);
+  const setFilmGrainOpacity = useTapestryStore((state) => state.setFilmGrainOpacity);
+  const setFilmGrainSize = useTapestryStore((state) => state.setFilmGrainSize);
+  const setFilmGrainBlendMode = useTapestryStore((state) => state.setFilmGrainBlendMode);
+  const setScanlinesIntensity = useTapestryStore((state) => state.setScanlinesIntensity);
+  const setScanlinesOpacity = useTapestryStore((state) => state.setScanlinesOpacity);
+  const setScanlinesSpacing = useTapestryStore((state) => state.setScanlinesSpacing);
+  const setScanlinesThickness = useTapestryStore((state) => state.setScanlinesThickness);
+  const setScanlinesBlendMode = useTapestryStore((state) => state.setScanlinesBlendMode);
+  const setVeinsIntensity = useTapestryStore((state) => state.setVeinsIntensity);
+  const setVeinsOpacity = useTapestryStore((state) => state.setVeinsOpacity);
+  const setVeinsScale = useTapestryStore((state) => state.setVeinsScale);
+  const setVeinsBlendMode = useTapestryStore((state) => state.setVeinsBlendMode);
+  const setVeinsColor = useTapestryStore((state) => state.setVeinsColor);
+  const setVeinsSeed = useTapestryStore((state) => state.setVeinsSeed);
+  const randomizeVeinsSeed = useTapestryStore((state) => state.randomizeVeinsSeed);
+  const setSplatterIntensity = useTapestryStore((state) => state.setSplatterIntensity);
+  const setSplatterOpacity = useTapestryStore((state) => state.setSplatterOpacity);
+  const setSplatterScale = useTapestryStore((state) => state.setSplatterScale);
+  const setSplatterBlendMode = useTapestryStore((state) => state.setSplatterBlendMode);
+  const setSplatterColor = useTapestryStore((state) => state.setSplatterColor);
+  const setSplatterColor2 = useTapestryStore((state) => state.setSplatterColor2);
+  const setSplatterColor3 = useTapestryStore((state) => state.setSplatterColor3);
+  const setSplatterSeed = useTapestryStore((state) => state.setSplatterSeed);
+  const randomizeSplatterSeed = useTapestryStore((state) => state.randomizeSplatterSeed);
+  const setBrushStrokesIntensity = useTapestryStore((state) => state.setBrushStrokesIntensity);
+  const setBrushStrokesOpacity = useTapestryStore((state) => state.setBrushStrokesOpacity);
+  const setBrushStrokesScale = useTapestryStore((state) => state.setBrushStrokesScale);
+  const setBrushStrokesBlendMode = useTapestryStore((state) => state.setBrushStrokesBlendMode);
+  const setBrushStrokesColor = useTapestryStore((state) => state.setBrushStrokesColor);
+  const setBrushStrokesColor2 = useTapestryStore((state) => state.setBrushStrokesColor2);
+  const setBrushStrokesColor3 = useTapestryStore((state) => state.setBrushStrokesColor3);
+  const setBrushStrokesSeed = useTapestryStore((state) => state.setBrushStrokesSeed);
+  const randomizeBrushStrokesSeed = useTapestryStore((state) => state.randomizeBrushStrokesSeed);
+
+  const [selectedItemId, setSelectedItemId] = React.useState<string | null>(null);
+  const [expandedItemId, setExpandedItemId] = React.useState<string | null>(null);
+  const [expandedSplatterLayers, setExpandedSplatterLayers] = React.useState<Set<string>>(new Set());
+  const [expandedSwooshLayers, setExpandedSwooshLayers] = React.useState<Set<string>>(new Set());
+
+  // Handler to add a new swoosh
+  const handleAddSwoosh = () => {
+    const gradient = REGIONAL_GRADIENTS.find((g) => g.id === selectedRegion);
+    const duotoneColors = customDuotoneColors || gradient?.duotone;
+    const swooshColor = duotoneColors?.colorA || '#ffffff';
+
+    const swoosh = generateRandomSwoosh(canvasSize.width, canvasSize.height, swooshColor);
+    addSwoosh(swoosh);
+    selectSwoosh(swoosh.id);
+  };
+
+  // Auto-update brush swooshs color when Euro region is selected
+  React.useEffect(() => {
+    if (selectedRegion === 'euro' && showBrushStrokes) {
+      setBrushStrokesColor('#512425');
+    }
+  }, [selectedRegion, showBrushStrokes, setBrushStrokesColor]);
+
+  // Build unified list: all effects shown by default
+  const layerItems: LayerItem[] = [];
+
+  // Add all effects (always shown, can be hidden via visibility toggle)
+  layerItems.push({
+    id: 'grain',
+    type: 'grain',
+    enabled: true,
+    visible: showFilmGrain,
+  });
+
+  layerItems.push({
+    id: 'scanlines',
+    type: 'scanlines',
+    enabled: true,
+    visible: showScanlines,
+  });
+
+  layerItems.push({
+    id: 'veins',
+    type: 'veins',
+    enabled: true,
+    visible: showVeins,
+  });
+
+  // Add single grouped splatter item
+  layerItems.push({
+    id: 'splatter',
+    type: 'splatter',
+    enabled: true,
+    visible: showSplatter,
+    name: 'Splatter',
+  });
+
+  layerItems.push({
+    id: 'brushswooshs',
+    type: 'brushswooshs',
+    enabled: true,
+    visible: showBrushStrokes,
+  });
+
+  // Add single swoosh item (like other effects)
+  layerItems.push({
+    id: 'swoosh',
+    type: 'swoosh',
+    enabled: true,
+    visible: true,
+    name: 'SWOOSH',
+  });
+
+  const handleItemTypeChange = (itemId: string, item: LayerItem, newType: ItemType) => {
+    // If changing TO swoosh, create a new swoosh and remove the old effect
+    if (newType === 'swoosh') {
+      // Remove old effect first
+      if (itemId === 'grain') toggleFilmGrain();
+      else if (itemId === 'scanlines') toggleScanlines();
+      else if (itemId === 'veins') toggleVeins();
+      else if (itemId === 'splatter') toggleSplatter();
+      else if (itemId === 'brushswooshs') toggleBrushStrokes();
+      else if (item.type === 'swoosh') {
+        // Already a swoosh, do nothing
+        return;
+      }
+
+      // Create new swoosh
+      handleAddSwoosh();
+      return;
+    }
+
+    // If changing FROM swoosh to something else
+    if (item.type === 'swoosh') {
+      // Remove the swoosh
+      removeSwoosh(itemId);
+      if (selectedSwooshId === itemId) {
+        selectSwoosh(null);
+      }
+      // Add the new effect
+      if (newType === 'grain') toggleFilmGrain();
+      else if (newType === 'scanlines') toggleScanlines();
+      else if (newType === 'veins') toggleVeins();
+      else if (newType === 'splatter') toggleSplatter();
+      else if (newType === 'brushswooshs') toggleBrushStrokes();
+      return;
+    }
+
+    // Normal effect type change
+    // Toggle off current effect
+    if (itemId === 'grain') toggleFilmGrain();
+    else if (itemId === 'scanlines') toggleScanlines();
+    else if (itemId === 'veins') toggleVeins();
+    else if (itemId === 'splatter') toggleSplatter();
+    else if (itemId === 'brushswooshs') toggleBrushStrokes();
+
+    // Toggle on new effect
+    if (newType === 'grain') toggleFilmGrain();
+    else if (newType === 'scanlines') toggleScanlines();
+    else if (newType === 'veins') toggleVeins();
+    else if (newType === 'splatter') toggleSplatter();
+    else if (newType === 'brushswooshs') toggleBrushStrokes();
+  };
+
+  const handleRemoveItem = (itemId: string, item: LayerItem) => {
+    if (itemId === 'grain') toggleFilmGrain();
+    else if (itemId === 'scanlines') toggleScanlines();
+    else if (itemId === 'veins') toggleVeins();
+    else if (itemId === 'splatter') toggleSplatter();
+    else if (itemId === 'brushswooshs') toggleBrushStrokes();
+    else if (item.type === 'swoosh') {
+      // Remove individual swoosh
+      removeSwoosh(itemId);
+      if (selectedSwooshId === itemId) {
+        selectSwoosh(null);
+      }
+    }
+    else if (itemId.startsWith('splatter-')) {
+      // Remove individual splatter layer
+      removeSplatterLayer(itemId);
+    }
+  };
+
+  const handleItemClick = (itemId: string) => {
+    setSelectedItemId(itemId);
+  };
+
+  const handleToggleExpand = (itemId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setExpandedItemId(expandedItemId === itemId ? null : itemId);
+  };
+
+  return (
+    <div className="effects-panel">
+      <div className="effects-list">
+        {layerItems.length === 0 ? (
+          <div className="effects-empty">No items added</div>
+        ) : (
+          layerItems.map((item) => (
+            <React.Fragment key={item.id}>
+              <div
+                className={`effect-item ${selectedItemId === item.id ? 'selected' : ''}`}
+                onClick={() => handleItemClick(item.id)}
+              >
+                <div className="effect-name-box">
+                  <span className="effect-name">
+                    {item.type === 'grain' && 'FILM GRAIN'}
+                    {item.type === 'scanlines' && 'SCANLINES'}
+                    {item.type === 'veins' && 'VEINS'}
+                    {item.type === 'splatter' && 'SPLATTER'}
+                    {item.type === 'brushswooshs' && 'STROKE'}
+                    {item.type === 'swoosh' && 'SWOOSH'}
+                  </span>
+
+                  {/* Inline Opacity Control - not for swoosh or splatter */}
+                  {item.type !== 'swoosh' && item.type !== 'splatter' && (
+                    <div className="inline-opacity-control">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={
+                          item.type === 'grain' ? Math.round(filmGrainOpacity * 100) :
+                          item.type === 'scanlines' ? Math.round(scanlinesOpacity * 100) :
+                          item.type === 'veins' ? Math.round(veinsOpacity * 100) :
+                          item.type === 'brushswooshs' ? Math.round(brushStrokesOpacity * 100) :
+                          0
+                        }
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          const value = Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) / 100;
+                          if (item.type === 'grain') setFilmGrainOpacity(value);
+                          else if (item.type === 'scanlines') setScanlinesOpacity(value);
+                          else if (item.type === 'veins') setVeinsOpacity(value);
+                          else if (item.type === 'brushswooshs') setBrushStrokesOpacity(value);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-opacity-input"
+                      />
+                      <span className="inline-opacity-percent">%</span>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  className="effect-action-btn"
+                  onClick={(e) => handleToggleExpand(item.id, e)}
+                  title="Toggle parameters"
+                >
+                  {expandedItemId === item.id ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                </button>
+
+                <button
+                  className="effect-action-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Toggle visibility based on item type
+                    if (item.id === 'grain') toggleFilmGrain();
+                    else if (item.id === 'scanlines') toggleScanlines();
+                    else if (item.id === 'veins') toggleVeins();
+                    else if (item.id === 'splatter') toggleSplatter();
+                    else if (item.id === 'brushswooshs') toggleBrushStrokes();
+                    else if (item.type === 'swoosh') {
+                      // Toggle individual swoosh visibility
+                      updateSwoosh(item.id, { visible: !item.visible });
+                    }
+                  }}
+                  title={item.visible ? "Hide layer" : "Show layer"}
+                >
+                  {item.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                </button>
+              </div>
+
+              {/* Inline Parameters - shown when expanded */}
+              {expandedItemId === item.id && (
+                <div className="effect-parameters">
+                  {item.type === 'grain' && (
+                    <>
+                      <div className="parameter-group">
+                        <label className="parameter-label">Opacity</label>
+                        <div className="parameter-control">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={filmGrainOpacity * 100}
+                            onChange={(e) => setFilmGrainOpacity(parseFloat(e.target.value) / 100)}
+                            className="parameter-slider"
+                          />
+                          <span className="parameter-value">{Math.round(filmGrainOpacity * 100)}%</span>
+                        </div>
+                      </div>
+
+                      <div className="parameter-group">
+                        <label className="parameter-label">Intensity</label>
+                        <div className="parameter-control">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={filmGrainIntensity * 100}
+                            onChange={(e) => setFilmGrainIntensity(parseFloat(e.target.value) / 100)}
+                            className="parameter-slider"
+                          />
+                          <span className="parameter-value">{Math.round(filmGrainIntensity * 100)}%</span>
+                        </div>
+                      </div>
+
+                      <div className="parameter-group">
+                        <label className="parameter-label">Grain Size</label>
+                        <div className="parameter-control">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={filmGrainSize * 100}
+                            onChange={(e) => setFilmGrainSize(parseFloat(e.target.value) / 100)}
+                            className="parameter-slider"
+                          />
+                          <span className="parameter-value">{Math.round(filmGrainSize * 100)}%</span>
+                        </div>
+                      </div>
+
+                      <div className="parameter-group">
+                        <label className="parameter-label">Blend Mode</label>
+                        <select
+                          className="parameter-select"
+                          value={filmGrainBlendMode}
+                          onChange={(e) => setFilmGrainBlendMode(e.target.value)}
+                        >
+                          <option value="normal">Normal</option>
+                          <option value="multiply">Multiply</option>
+                          <option value="screen">Screen</option>
+                          <option value="overlay">Overlay</option>
+                          <option value="soft-light">Soft Light</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+                  {item.type === 'scanlines' && (
+                    <>
+                      <div className="parameter-group">
+                        <label className="parameter-label">Opacity</label>
+                        <div className="parameter-control">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={scanlinesOpacity * 100}
+                            onChange={(e) => setScanlinesOpacity(parseFloat(e.target.value) / 100)}
+                            className="parameter-slider"
+                          />
+                          <span className="parameter-value">{Math.round(scanlinesOpacity * 100)}%</span>
+                        </div>
+                      </div>
+
+                      <div className="parameter-group">
+                        <label className="parameter-label">Intensity</label>
+                        <div className="parameter-control">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={scanlinesIntensity * 100}
+                            onChange={(e) => setScanlinesIntensity(parseFloat(e.target.value) / 100)}
+                            className="parameter-slider"
+                          />
+                          <span className="parameter-value">{Math.round(scanlinesIntensity * 100)}%</span>
+                        </div>
+                      </div>
+
+                      <div className="parameter-group">
+                        <label className="parameter-label">Spacing</label>
+                        <div className="parameter-control">
+                          <input
+                            type="range"
+                            min="1"
+                            max="10"
+                            step="1"
+                            value={scanlinesSpacing}
+                            onChange={(e) => setScanlinesSpacing(parseFloat(e.target.value))}
+                            className="parameter-slider"
+                          />
+                          <span className="parameter-value">{scanlinesSpacing}px</span>
+                        </div>
+                      </div>
+
+                      <div className="parameter-group">
+                        <label className="parameter-label">Thickness</label>
+                        <div className="parameter-control">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={scanlinesThickness * 100}
+                            onChange={(e) => setScanlinesThickness(parseFloat(e.target.value) / 100)}
+                            className="parameter-slider"
+                          />
+                          <span className="parameter-value">{Math.round(scanlinesThickness * 100)}%</span>
+                        </div>
+                      </div>
+
+                      <div className="parameter-group">
+                        <label className="parameter-label">Blend Mode</label>
+                        <select
+                          className="parameter-select"
+                          value={scanlinesBlendMode}
+                          onChange={(e) => setScanlinesBlendMode(e.target.value)}
+                        >
+                          <option value="normal">Normal</option>
+                          <option value="multiply">Multiply</option>
+                          <option value="screen">Screen</option>
+                          <option value="overlay">Overlay</option>
+                          <option value="darken">Darken</option>
+                          <option value="lighten">Lighten</option>
+                          <option value="soft-light">Soft Light</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+                  {item.type === 'veins' && (
+                    <>
+                      <div className="parameter-group">
+                        <label className="parameter-label">Opacity</label>
+                        <div className="parameter-control">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={veinsOpacity * 100}
+                            onChange={(e) => setVeinsOpacity(parseFloat(e.target.value) / 100)}
+                            className="parameter-slider"
+                          />
+                          <span className="parameter-value">{Math.round(veinsOpacity * 100)}%</span>
+                        </div>
+                      </div>
+
+                      <div className="parameter-group">
+                        <label className="parameter-label">Intensity</label>
+                        <div className="parameter-control">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={veinsIntensity * 100}
+                            onChange={(e) => setVeinsIntensity(parseFloat(e.target.value) / 100)}
+                            className="parameter-slider"
+                          />
+                          <span className="parameter-value">{Math.round(veinsIntensity * 100)}%</span>
+                        </div>
+                      </div>
+
+                      <div className="parameter-group">
+                        <label className="parameter-label">Scale</label>
+                        <div className="parameter-control">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={veinsScale * 100}
+                            onChange={(e) => setVeinsScale(parseFloat(e.target.value) / 100)}
+                            className="parameter-slider"
+                          />
+                          <span className="parameter-value">{Math.round(veinsScale * 100)}%</span>
+                        </div>
+                      </div>
+
+                      <div className="parameter-group">
+                        <label className="parameter-label">Color</label>
+                        <input
+                          type="color"
+                          value={veinsColor}
+                          onChange={(e) => setVeinsColor(e.target.value)}
+                          className="color-input"
+                        />
+                      </div>
+
+                      <div className="parameter-group">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <label className="parameter-label" style={{ marginBottom: 0 }}>Seed</label>
+                          <button
+                            onClick={randomizeVeinsSeed}
+                            className="parameter-icon-btn"
+                            title="Randomize"
+                          >
+                            <Shuffle size={14} />
+                          </button>
+                        </div>
+                        <div className="parameter-control" style={{ marginTop: 'var(--space-2)' }}>
+                          <input
+                            type="range"
+                            min="0"
+                            max="1000000"
+                            step="1"
+                            value={Math.round(veinsSeed * 1000000)}
+                            onChange={(e) => setVeinsSeed(parseFloat(e.target.value) / 1000000)}
+                            className="parameter-slider"
+                          />
+                          <span className="parameter-value">{Math.round(veinsSeed * 1000000)}</span>
+                        </div>
+                      </div>
+
+                      <div className="parameter-group">
+                        <label className="parameter-label">Blend Mode</label>
+                        <select
+                          className="parameter-select"
+                          value={veinsBlendMode}
+                          onChange={(e) => setVeinsBlendMode(e.target.value)}
+                        >
+                          <option value="normal">Normal</option>
+                          <option value="multiply">Multiply</option>
+                          <option value="screen">Screen</option>
+                          <option value="overlay">Overlay</option>
+                          <option value="darken">Darken</option>
+                          <option value="lighten">Lighten</option>
+                          <option value="soft-light">Soft Light</option>
+                          <option value="color-dodge">Color Dodge</option>
+                          <option value="color-burn">Color Burn</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+
+                  {item.type === 'splatter' && (
+                    <>
+                      {/* Show all splatter layers in a grouped format */}
+                      {splatterLayers.map((splatterLayer, index) => {
+                        const isLayerExpanded = expandedSplatterLayers.has(splatterLayer.id);
+
+                        return (
+                          <div key={splatterLayer.id} style={{
+                            marginBottom: 'var(--space-4)',
+                            paddingBottom: 'var(--space-3)',
+                            borderBottom: index < splatterLayers.length - 1 ? '1px solid var(--color-border-light)' : 'none'
+                          }}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: isLayerExpanded ? 'var(--space-2)' : '0',
+                                cursor: 'pointer',
+                                padding: '4px',
+                                borderRadius: 'var(--radius-sm)',
+                                transition: 'background-color var(--transition-fast)',
+                              }}
+                              onClick={() => {
+                                const newExpanded = new Set(expandedSplatterLayers);
+                                if (isLayerExpanded) {
+                                  newExpanded.delete(splatterLayer.id);
+                                } else {
+                                  newExpanded.add(splatterLayer.id);
+                                }
+                                setExpandedSplatterLayers(newExpanded);
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = 'var(--color-surface-secondary)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                              }}
+                            >
+                              <span style={{
+                                fontSize: '11px',
+                                fontWeight: 'var(--font-weight-semibold)',
+                                color: 'var(--color-text-secondary)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                              }}>
+                                {isLayerExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                                Layer {index + 1}
+                              </span>
+
+                              {/* Inline Opacity Control for Splatter Layer */}
+                              <div className="inline-opacity-control">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={Math.round(splatterLayer.opacity * 100)}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    const value = Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) / 100;
+                                    updateSplatterLayer(splatterLayer.id, { opacity: value });
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-opacity-input"
+                                />
+                                <span className="inline-opacity-percent">%</span>
+                              </div>
+                            </div>
+
+                            {isLayerExpanded && (
+                              <>
+
+                          <div className="parameter-group">
+                            <label className="parameter-label">Opacity</label>
+                            <div className="parameter-control">
+                              <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={splatterLayer.opacity * 100}
+                                onChange={(e) => updateSplatterLayer(splatterLayer.id, { opacity: parseFloat(e.target.value) / 100 })}
+                                className="parameter-slider"
+                              />
+                              <span className="parameter-value">{Math.round(splatterLayer.opacity * 100)}%</span>
+                            </div>
+                          </div>
+
+                          <div className="parameter-group">
+                            <label className="parameter-label">Intensity</label>
+                            <div className="parameter-control">
+                              <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={splatterLayer.intensity * 100}
+                                onChange={(e) => updateSplatterLayer(splatterLayer.id, { intensity: parseFloat(e.target.value) / 100 })}
+                                className="parameter-slider"
+                              />
+                              <span className="parameter-value">{Math.round(splatterLayer.intensity * 100)}%</span>
+                            </div>
+                          </div>
+
+                          <div className="parameter-group">
+                            <label className="parameter-label">Scale</label>
+                            <div className="parameter-control">
+                              <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={splatterLayer.scale * 100}
+                                onChange={(e) => updateSplatterLayer(splatterLayer.id, { scale: parseFloat(e.target.value) / 100 })}
+                                className="parameter-slider"
+                              />
+                              <span className="parameter-value">{Math.round(splatterLayer.scale * 100)}%</span>
+                            </div>
+                          </div>
+
+                          <div className="parameter-group">
+                            <label className="parameter-label">Color</label>
+                            <input
+                              type="color"
+                              value={splatterLayer.color}
+                              onChange={(e) => updateSplatterLayer(splatterLayer.id, { color: e.target.value })}
+                              className="color-input"
+                            />
+                          </div>
+
+                          <div className="parameter-group">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <label className="parameter-label" style={{ marginBottom: 0 }}>Seed</label>
+                              <button
+                                onClick={() => updateSplatterLayer(splatterLayer.id, { seed: Math.random() })}
+                                className="parameter-icon-btn"
+                                title="Randomize"
+                              >
+                                <Shuffle size={14} />
+                              </button>
+                            </div>
+                            <div className="parameter-control" style={{ marginTop: 'var(--space-2)' }}>
+                              <input
+                                type="range"
+                                min="0"
+                                max="1000000"
+                                step="1"
+                                value={Math.round(splatterLayer.seed * 1000000)}
+                                onChange={(e) => updateSplatterLayer(splatterLayer.id, { seed: parseFloat(e.target.value) / 1000000 })}
+                                className="parameter-slider"
+                              />
+                              <span className="parameter-value">{Math.round(splatterLayer.seed * 1000000)}</span>
+                            </div>
+                          </div>
+
+                          <div className="parameter-group">
+                            <label className="parameter-label">Blend Mode</label>
+                            <select
+                              className="parameter-select"
+                              value={splatterLayer.blendMode}
+                              onChange={(e) => updateSplatterLayer(splatterLayer.id, { blendMode: e.target.value })}
+                            >
+                              <option value="normal">Normal</option>
+                              <option value="multiply">Multiply</option>
+                              <option value="screen">Screen</option>
+                              <option value="overlay">Overlay</option>
+                              <option value="darken">Darken</option>
+                              <option value="lighten">Lighten</option>
+                              <option value="soft-light">Soft Light</option>
+                            </select>
+                          </div>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+
+                  {item.type === 'brushswooshs' && (
+                    <>
+                      <div className="parameter-group">
+                        <label className="parameter-label">Opacity</label>
+                        <div className="parameter-control">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={brushStrokesOpacity * 100}
+                            onChange={(e) => setBrushStrokesOpacity(parseFloat(e.target.value) / 100)}
+                            className="parameter-slider"
+                          />
+                          <span className="parameter-value">{Math.round(brushStrokesOpacity * 100)}%</span>
+                        </div>
+                      </div>
+
+                      <div className="parameter-group">
+                        <label className="parameter-label">Intensity</label>
+                        <div className="parameter-control">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={brushStrokesIntensity * 100}
+                            onChange={(e) => setBrushStrokesIntensity(parseFloat(e.target.value) / 100)}
+                            className="parameter-slider"
+                          />
+                          <span className="parameter-value">{Math.round(brushStrokesIntensity * 100)}%</span>
+                        </div>
+                      </div>
+
+                      <div className="parameter-group">
+                        <label className="parameter-label">Scale</label>
+                        <div className="parameter-control">
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={brushStrokesScale * 100}
+                            onChange={(e) => setBrushStrokesScale(parseFloat(e.target.value) / 100)}
+                            className="parameter-slider"
+                          />
+                          <span className="parameter-value">{Math.round(brushStrokesScale * 100)}%</span>
+                        </div>
+                      </div>
+
+                      <div className="parameter-group">
+                        <label className="parameter-label">Color</label>
+                        <input
+                          type="color"
+                          value={brushStrokesColor}
+                          onChange={(e) => setBrushStrokesColor(e.target.value)}
+                          className="color-input"
+                        />
+                      </div>
+
+                      <div className="parameter-group">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <label className="parameter-label" style={{ marginBottom: 0 }}>Seed</label>
+                          <button
+                            onClick={randomizeBrushStrokesSeed}
+                            className="parameter-icon-btn"
+                            title="Randomize"
+                          >
+                            <Shuffle size={14} />
+                          </button>
+                        </div>
+                        <div className="parameter-control" style={{ marginTop: 'var(--space-2)' }}>
+                          <input
+                            type="range"
+                            min="0"
+                            max="1000000"
+                            step="1"
+                            value={Math.round(brushStrokesSeed * 1000000)}
+                            onChange={(e) => setBrushStrokesSeed(parseFloat(e.target.value) / 1000000)}
+                            className="parameter-slider"
+                          />
+                          <span className="parameter-value">{Math.round(brushStrokesSeed * 1000000)}</span>
+                        </div>
+                      </div>
+
+                      <div className="parameter-group">
+                        <label className="parameter-label">Blend Mode</label>
+                        <select
+                          className="parameter-select"
+                          value={brushStrokesBlendMode}
+                          onChange={(e) => setBrushStrokesBlendMode(e.target.value)}
+                        >
+                          <option value="normal">Normal</option>
+                          <option value="multiply">Multiply</option>
+                          <option value="screen">Screen</option>
+                          <option value="overlay">Overlay</option>
+                          <option value="darken">Darken</option>
+                          <option value="lighten">Lighten</option>
+                          <option value="soft-light">Soft Light</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
+
+                </div>
+              )}
+            </React.Fragment>
+          ))
+        )}
+      </div>
+
+      {/* Add Swoosh Button */}
+      <button
+        onClick={handleAddSwoosh}
+        style={{
+          width: '100%',
+          padding: '8px',
+          marginTop: 'var(--space-2)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '6px',
+          backgroundColor: 'var(--color-surface-secondary)',
+          border: '1px solid var(--color-border-light)',
+          borderRadius: 'var(--radius-sm)',
+          color: 'var(--color-text-primary)',
+          fontSize: '11px',
+          fontWeight: 'var(--font-weight-semibold)',
+          cursor: 'pointer',
+          transition: 'all var(--transition-fast)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'var(--color-surface)';
+          e.currentTarget.style.borderColor = 'var(--color-primary)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'var(--color-surface-secondary)';
+          e.currentTarget.style.borderColor = 'var(--color-border-light)';
+        }}
+      >
+        <Shuffle size={12} />
+        Add Swoosh
+      </button>
+    </div>
+  );
+};

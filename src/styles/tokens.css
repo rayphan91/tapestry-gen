@@ -1,0 +1,141 @@
+/* Design System Tokens - Wise Tapestry V3 */
+/* Extracted from: design-system-extract.md */
+
+:root {
+  /* ========== Colors ========== */
+
+  /* Primary Colors */
+  --color-primary: #9fe870;           /* Bright Green */
+  --color-primary-dark: #163300;      /* Dark Green */
+  --color-surface: #1a1b19;           /* Dark Gray */
+
+  /* Supporting Colors */
+  --color-border-light: #2a2b28;      /* Medium Dark Gray */
+  --color-border-dark: #0e0f0c;       /* Black */
+  --color-surface-secondary: #222320; /* Slightly Lighter Dark Gray */
+
+  /* Content Colors */
+  --color-text-primary: #e8e9e7;      /* Light Gray */
+  --color-text-secondary: #9a9b99;    /* Medium Gray */
+
+  /* Design Tokens from Figma */
+  --color-background-neutral: #163300;
+  --color-background-screen: #1a1b19;
+  --color-content-primary: #e8e9e7;
+  --color-content-secondary: #9a9b99;
+  --color-interactive-accent: #9fe870;
+  --color-interactive-primary: #163300;
+  --color-border-neutral: #2a2b28;
+
+  /* UI State Colors */
+  --color-hover: rgba(159, 232, 112, 0.08);
+  --color-active: rgba(159, 232, 112, 0.12);
+  --color-disabled: rgba(159, 232, 112, 0.3);
+
+  /* ========== Typography ========== */
+
+  /* Font Families */
+  --font-display: 'Wise Sans', sans-serif;
+  --font-body: 'Inter', sans-serif;
+
+  /* Font Sizes */
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 20px;
+  --font-size-xl: 24px;
+  --font-size-2xl: 34.56px;
+  --font-size-3xl: 57.6px;
+  --font-size-4xl: 96px;
+
+  /* Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Line Heights */
+  --line-height-tight: 1.2;
+  --line-height-base: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ========== Spacing ========== */
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 60px;
+  --space-11: 80px;
+  --space-12: 100px;
+
+  /* ========== Border Radius ========== */
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* ========== Shadows ========== */
+
+  --shadow-sm: 0 1px 2px rgba(14, 15, 12, 0.05);
+  --shadow-md: 0 4px 6px rgba(14, 15, 12, 0.07);
+  --shadow-lg: 0 10px 15px rgba(14, 15, 12, 0.1);
+  --shadow-xl: 0 20px 25px rgba(14, 15, 12, 0.15);
+
+  /* ========== Layout ========== */
+
+  --topbar-height: 60px;
+  --sidebar-width: 280px;
+  --sidebar-collapsed-width: 0px;
+
+  /* ========== Z-Index ========== */
+
+  --z-index-dropdown: 1000;
+  --z-index-modal: 2000;
+  --z-index-topbar: 100;
+  --z-index-sidebar: 50;
+
+  /* ========== Transitions ========== */
+
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 350ms ease;
+}
+
+/* Light Mode */
+[data-theme="light"] {
+  /* Primary Colors */
+  --color-primary: #9fe870;           /* Bright Green */
+  --color-primary-dark: #163300;      /* Dark Green */
+  --color-surface: #ffffff;           /* White */
+
+  /* Supporting Colors */
+  --color-border-light: #ecefeb;      /* Light Gray/Off-White */
+  --color-border-dark: #0e0f0c;       /* Black */
+  --color-surface-secondary: #eff1ed; /* Very Light Green */
+
+  /* Content Colors */
+  --color-text-primary: #0e0f0c;      /* Black */
+  --color-text-secondary: #454745;    /* Dark Gray */
+
+  /* Design Tokens from Figma */
+  --color-background-neutral: #163300;
+  --color-background-screen: #ffffff;
+  --color-content-primary: #0e0f0c;
+  --color-content-secondary: #454745;
+  --color-interactive-accent: #9fe870;
+  --color-interactive-primary: #163300;
+  --color-border-neutral: #0e0f0c;
+
+  /* UI State Colors */
+  --color-hover: rgba(22, 51, 0, 0.08);
+  --color-active: rgba(22, 51, 0, 0.12);
+  --color-disabled: rgba(22, 51, 0, 0.3);
+}

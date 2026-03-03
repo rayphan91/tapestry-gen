@@ -1,0 +1,154 @@
+.animation-controls {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  min-width: 500px;
+}
+
+.animation-top-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.animation-play-button {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-bg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.animation-play-button:hover {
+  background: var(--color-primary-dark);
+  transform: scale(1.05);
+}
+
+.animation-time-display {
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+  min-width: 80px;
+}
+
+.animation-duration-control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+.animation-duration-control label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.animation-duration-input {
+  width: 50px;
+  padding: 4px 6px;
+  background: var(--color-surface-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xs);
+  color: var(--color-text-primary);
+  font-size: 12px;
+  text-align: center;
+}
+
+.animation-duration-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.animation-duration-control span {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.animation-scrubber-container {
+  position: relative;
+  width: 100%;
+}
+
+.animation-scrubber {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--color-surface-secondary);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.animation-scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.animation-scrubber::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 4px rgba(159, 232, 112, 0.2);
+}
+
+.animation-scrubber::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--color-primary);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.animation-scrubber::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 4px rgba(159, 232, 112, 0.2);
+}
+
+/* Progress fill effect */
+.animation-scrubber::-webkit-slider-runnable-track {
+  height: 6px;
+  background: linear-gradient(
+    to right,
+    var(--color-primary) 0%,
+    var(--color-primary) var(--progress, 0%),
+    var(--color-surface-secondary) var(--progress, 0%),
+    var(--color-surface-secondary) 100%
+  );
+  border-radius: 3px;
+}
+
+.animation-scrubber::-moz-range-track {
+  height: 6px;
+  background: var(--color-surface-secondary);
+  border-radius: 3px;
+}
+
+.animation-scrubber::-moz-range-progress {
+  height: 6px;
+  background: var(--color-primary);
+  border-radius: 3px;
+}
