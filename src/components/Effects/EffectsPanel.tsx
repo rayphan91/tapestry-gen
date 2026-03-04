@@ -115,7 +115,7 @@ export const EffectsPanel: React.FC = () => {
 
   // Auto-update brush swooshs color when Euro region is selected
   React.useEffect(() => {
-    if (selectedRegion === 'euro' && showBrushStrokes) {
+    if ((selectedRegion as any) === 'euro' && showBrushStrokes) {
       setBrushStrokesColor('#512425');
     }
   }, [selectedRegion, showBrushStrokes, setBrushStrokesColor]);

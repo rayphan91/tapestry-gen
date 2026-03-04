@@ -345,7 +345,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
       ctx.scale(scale, scale);
 
       // Only fill with white if no gradient is selected
-      if (!selectedRegion || selectedRegion === '') {
+      if (!selectedRegion || (selectedRegion as any) === '') {
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
       }

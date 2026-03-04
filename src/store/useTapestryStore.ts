@@ -391,7 +391,7 @@ export const useTapestryStore = create<TapestryState>()(
       updateLayer: (layerId, updates) =>
         set((state) => ({
           layers: state.layers.map((layer) =>
-            layer.id === layerId ? { ...layer, ...updates } : layer
+            layer.id === layerId ? { ...layer, ...updates } as any : layer
           ),
         })),
 
