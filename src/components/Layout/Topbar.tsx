@@ -17,17 +17,6 @@ export const Topbar: React.FC = () => {
     <div className="topbar">
       <div className="topbar-left">
         <div className="topbar-logo">
-          <img
-            src="/assets/logo.svg"
-            alt="Wise"
-            className="topbar-logo-img"
-            style={{
-              height: '16px',
-              width: 'auto',
-              filter: 'var(--logo-filter)'
-            }}
-          />
-          <span className="topbar-logo-separator">·</span>
           <span className="topbar-logo-subtitle">Tapestry Generator</span>
         </div>
       </div>

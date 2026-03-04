@@ -256,7 +256,7 @@ export const useTapestryStore = create<TapestryState>()(
           seed: Math.random(),
         },
       ],
-      scanlinesIntensity: 0.68,
+      scanlinesIntensity: 0.1,
       scanlinesOpacity: 1.0,
       scanlinesSpacing: 3,
       scanlinesThickness: 0.9,
