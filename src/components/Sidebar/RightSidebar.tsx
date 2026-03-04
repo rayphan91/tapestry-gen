@@ -5,6 +5,7 @@ import { REGIONAL_GRADIENTS } from '@/types';
 import { Moon, Sun, Eye, EyeOff, Lock, Unlock, Trash2, GripVertical, Shuffle, Sparkles } from 'lucide-react';
 import { generateRandomSwoosh } from '@/utils/swooshGenerator';
 import { generateImagesWithDALLE, getCountryNameFromFlag, type MasterPromptTheme } from '@/services/imageGeneration';
+import { generateImagesWithProxy } from '@/services/imageGenerationProxy';
 import { ExportModal } from '../Export/ExportModal';
 import { Flag } from '../common/Flag';
 import './RightSidebar.css';
@@ -202,14 +203,23 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
           ? themes[Math.floor(Math.random() * themes.length)]
           : generateTheme;
 
-        const images = await generateImagesWithDALLE({
-          region: selectedRegion,
-          country: country,
-          count: 1, // One image per country
-          theme: themeToUse,
-          size: '1024x1024',
-          apiKey: apiKey,
-        });
+        // Use proxy service if no API key is provided, otherwise use direct API
+        const images = apiKey
+          ? await generateImagesWithDALLE({
+              region: selectedRegion,
+              country: country,
+              count: 1, // One image per country
+              theme: themeToUse,
+              size: '1024x1024',
+              apiKey: apiKey,
+            })
+          : await generateImagesWithProxy({
+              region: selectedRegion,
+              country: country,
+              count: 1,
+              theme: themeToUse,
+              size: '1024x1024',
+            });
 
         // Add generated images to collage
         for (const image of images) {
@@ -569,11 +579,13 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
                 </div>
               ) : null}
 
-              {/* API Key Input */}
-              <label className="property-label" style={{ marginTop: 'var(--space-2)' }}>OpenAI API Key</label>
+              {/* API Key Input - Optional */}
+              <label className="property-label" style={{ marginTop: 'var(--space-2)' }}>
+                OpenAI API Key <span style={{ opacity: 0.6, fontWeight: 'normal' }}>(optional)</span>
+              </label>
               <input
                 type="password"
-                placeholder="sk-..."
+                placeholder="Leave empty to use shared API (limited)"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 className="property-input"
@@ -588,6 +600,14 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
                   fontFamily: 'monospace'
                 }}
               />
+              <p style={{
+                fontSize: '10px',
+                color: 'var(--color-text-tertiary)',
+                marginTop: 'var(--space-1)',
+                marginBottom: 0
+              }}>
+                {apiKey ? 'Using your personal API key' : 'Using shared API (rate limited)'}
+              </p>
 
               {/* Theme selector - always visible */}
               <label className="property-label" style={{ marginTop: 'var(--space-2)' }}>Theme</label>
