@@ -1,5 +1,4 @@
 import type { Layer } from '@/types';
-import type { Swoosh } from '@/store/useSwooshStore';
 
 interface TapestryState {
   selectedRegion: string;
@@ -10,7 +9,7 @@ interface TapestryState {
     url: string;
     img: HTMLImageElement;
   }>;
-  swooshes?: Swoosh[];
+  swooshes?: any[];
   showFilmGrain: boolean;
   showScanlines: boolean;
   showVeins: boolean;
