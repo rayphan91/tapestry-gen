@@ -111,9 +111,9 @@
 
 /* Light Mode */
 [data-theme="light"] {
-  /* Primary Colors */
-  --color-primary: #9fe870;           /* Bright Green */
-  --color-primary-dark: #163300;      /* Dark Green */
+  /* Primary Colors - SWAPPED for proper button colors */
+  --color-primary: #163300;           /* Dark Green (for text on buttons) */
+  --color-primary-dark: #163300;      /* Dark Green (for button backgrounds) */
   --color-surface: #ffffff;           /* White */
 
   /* Supporting Colors */

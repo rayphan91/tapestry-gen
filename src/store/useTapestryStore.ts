@@ -76,6 +76,8 @@ interface TapestryState {
     name: string;
     url: string;
     img: HTMLImageElement;
+    position?: { x: number; y: number }; // Optional custom position (0-1 normalized)
+    scale?: number; // Optional custom scale multiplier
   }>;
   collageSeed: number;
   collageParams: {
@@ -177,6 +179,9 @@ interface TapestryState {
   // Collage Actions
   addCollageImage: (name: string, url: string, img: HTMLImageElement) => void;
   removeCollageImage: (id: string) => void;
+  clearAllCollageImages: () => void;
+  updateCollageImagePosition: (id: string, position: { x: number; y: number }) => void;
+  updateCollageImageScale: (id: string, scale: number) => void;
   setCollageSeed: (seed: number) => void;
   randomizeCollageSeed: () => void;
   setCollageParam: (key: string, value: number) => void;
@@ -256,7 +261,7 @@ export const useTapestryStore = create<TapestryState>()(
       filmGrainSize: 0.5,
       filmGrainBlendMode: 'overlay',
       veinsIntensity: 0.5,
-      veinsOpacity: 0.51,
+      veinsOpacity: 1.0,
       veinsScale: 0.5,
       veinsBlendMode: 'overlay',
       veinsColor: '#ffffff',
@@ -271,7 +276,7 @@ export const useTapestryStore = create<TapestryState>()(
       splatterSeed: Math.random(),
       swooshOpacity: 1.0,
       brushStrokesIntensity: 0.3,
-      brushStrokesOpacity: 0.55,
+      brushStrokesOpacity: 1.0,
       brushStrokesScale: 0.5,
       brushStrokesBlendMode: 'multiply',
       brushStrokesColor: '#512425',
@@ -658,6 +663,25 @@ export const useTapestryStore = create<TapestryState>()(
       removeCollageImage: (id) =>
         set((state) => ({
           collageImages: state.collageImages.filter((img) => img.id !== id),
+        })),
+
+      clearAllCollageImages: () =>
+        set(() => ({
+          collageImages: [],
+        })),
+
+      updateCollageImagePosition: (id, position) =>
+        set((state) => ({
+          collageImages: state.collageImages.map((img) =>
+            img.id === id ? { ...img, position } : img
+          ),
+        })),
+
+      updateCollageImageScale: (id, scale) =>
+        set((state) => ({
+          collageImages: state.collageImages.map((img) =>
+            img.id === id ? { ...img, scale } : img
+          ),
         })),
 
       setCollageSeed: (seed) =>

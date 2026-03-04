@@ -2,13 +2,78 @@ import React from 'react';
 import { useTapestryStore } from '@/store/useTapestryStore';
 import { useSwooshStore } from '@/store/useSwooshStore';
 import { REGIONAL_GRADIENTS } from '@/types';
-import { Moon, Sun, Eye, EyeOff, Lock, Unlock, Trash2, GripVertical, Shuffle, ChevronDown } from 'lucide-react';
+import { Moon, Sun, Eye, EyeOff, Lock, Unlock, Trash2, GripVertical, Shuffle, Sparkles } from 'lucide-react';
 import { generateRandomSwoosh } from '@/utils/swooshGenerator';
+import { generateImagesWithDALLE, getCountryNameFromFlag, type MasterPromptTheme } from '@/services/imageGeneration';
+import { ExportModal } from '../Export/ExportModal';
 import './RightSidebar.css';
 
 interface RightSidebarProps {
   collapsed: boolean;
 }
+
+// Country to flag emoji mapping
+const COUNTRY_FLAGS: Record<string, string> = {
+  'Australia': '🇦🇺',
+  'New Zealand': '🇳🇿',
+  'India': '🇮🇳',
+  'Pakistan': '🇵🇰',
+  'Bangladesh': '🇧🇩',
+  'Sri Lanka': '🇱🇰',
+  'Nepal': '🇳🇵',
+  'Fiji': '🇫🇯',
+  'Papua New Guinea': '🇵🇬',
+  'United States': '🇺🇸',
+  'Canada': '🇨🇦',
+  'Japan': '🇯🇵',
+  'South Korea': '🇰🇷',
+  'China': '🇨🇳',
+  'Taiwan': '🇹🇼',
+  'Hong Kong': '🇭🇰',
+  'Mongolia': '🇲🇳',
+  'United Kingdom': '🇬🇧',
+  'France': '🇫🇷',
+  'Germany': '🇩🇪',
+  'Thailand': '🇹🇭',
+  'Vietnam': '🇻🇳',
+  'Singapore': '🇸🇬',
+  'Malaysia': '🇲🇾',
+  'Philippines': '🇵🇭',
+  'Indonesia': '🇮🇩',
+  'Sweden': '🇸🇪',
+  'Norway': '🇳🇴',
+  'Finland': '🇫🇮',
+  'Denmark': '🇩🇰',
+  'Nigeria': '🇳🇬',
+  'Ghana': '🇬🇭',
+  'Senegal': '🇸🇳',
+  'Ivory Coast': '🇨🇮',
+  'Mali': '🇲🇱',
+  'Mexico': '🇲🇽',
+  'Brazil': '🇧🇷',
+  'Argentina': '🇦🇷',
+  'Chile': '🇨🇱',
+  'Colombia': '🇨🇴',
+  'Peru': '🇵🇪',
+  'Venezuela': '🇻🇪',
+  'Egypt': '🇪🇬',
+  'Morocco': '🇲🇦',
+  'Tunisia': '🇹🇳',
+  'Algeria': '🇩🇿',
+  'Spain': '🇪🇸',
+  'Italy': '🇮🇹',
+  'Portugal': '🇵🇹',
+  'Greece': '🇬🇷',
+  'Netherlands': '🇳🇱',
+  'Belgium': '🇧🇪',
+  'Switzerland': '🇨🇭',
+  'Austria': '🇦🇹',
+  'United Arab Emirates': '🇦🇪',
+  'Saudi Arabia': '🇸🇦',
+  'Qatar': '🇶🇦',
+  'Israel': '🇮🇱',
+  'Jordan': '🇯🇴',
+};
 
 export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
   const selectedRegion = useTapestryStore((state) => state.selectedRegion);
@@ -49,6 +114,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
   const collageBlendMode = useTapestryStore((state) => state.collageBlendMode);
   const addCollageImage = useTapestryStore((state) => state.addCollageImage);
   const removeCollageImage = useTapestryStore((state) => state.removeCollageImage);
+  const clearAllCollageImages = useTapestryStore((state) => state.clearAllCollageImages);
   const setCollageSeed = useTapestryStore((state) => state.setCollageSeed);
   const randomizeCollageSeed = useTapestryStore((state) => state.randomizeCollageSeed);
   const setCollageParam = useTapestryStore((state) => state.setCollageParam);
@@ -57,9 +123,20 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
   const selectedLayer = layers.find(l => l.id === selectedLayerId) as any;
 
   const [draggedLayerId, setDraggedLayerId] = React.useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = React.useState(false);
+  const [generateCount, setGenerateCount] = React.useState(3);
+  const [generateTheme, setGenerateTheme] = React.useState<MasterPromptTheme>('mixed');
+  const [selectedCountries, setSelectedCountries] = React.useState<string[]>([]);
+  const [showCountryDropdown, setShowCountryDropdown] = React.useState(false);
+  // Hardcoded API key - replace with your actual OpenAI API key
+  const apiKey = 'YOUR_API_KEY_HERE';
+  const [generationProgress, setGenerationProgress] = React.useState(0);
+  const [generationTotal, setGenerationTotal] = React.useState(0);
+  const [showExportModal, setShowExportModal] = React.useState(false);
+
+  const countryDropdownRef = React.useRef<HTMLDivElement>(null);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const collageFileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleWidthChange = (value: string) => {
     const width = parseInt(value);
@@ -86,6 +163,18 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
       [key]: value,
     });
   };
+
+  // Close country dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (countryDropdownRef.current && !countryDropdownRef.current.contains(event.target as Node)) {
+        setShowCountryDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -163,6 +252,86 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
     });
   };
 
+  const handleGenerateImages = async () => {
+    if (!apiKey || apiKey.trim() === '' || apiKey === 'YOUR_API_KEY_HERE') {
+      alert('API key not configured. Please contact the developer.');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      // Available themes for randomization when "mixed" is selected
+      const themes: MasterPromptTheme[] = ['nature', 'cities', 'textures', 'culture'];
+
+      // Determine which countries to generate from
+      let countriesToGenerate: string[];
+
+      if (selectedCountries.length > 0) {
+        // Select mode: Use manually selected countries
+        countriesToGenerate = selectedCountries;
+      } else {
+        // Random mode: Randomly select countries from the gradient's countries list
+        const gradient = REGIONAL_GRADIENTS.find(g => g.id === selectedRegion);
+        if (!gradient || !gradient.countries || gradient.countries.length === 0) {
+          throw new Error('Selected region has no countries defined');
+        }
+
+        // Randomly pick N countries from the region (without replacement)
+        const shuffled = [...gradient.countries].sort(() => Math.random() - 0.5);
+        countriesToGenerate = shuffled.slice(0, Math.min(generateCount, gradient.countries.length));
+      }
+
+      setGenerationTotal(countriesToGenerate.length);
+      setGenerationProgress(0);
+
+      let currentProgress = 0;
+
+      // Generate one image per country
+      for (const country of countriesToGenerate) {
+        // Determine theme: use selected theme, or randomize if "mixed" is selected
+        const themeToUse = generateTheme === 'mixed'
+          ? themes[Math.floor(Math.random() * themes.length)]
+          : generateTheme;
+
+        const images = await generateImagesWithDALLE({
+          region: selectedRegion,
+          country: country,
+          count: 1, // One image per country
+          theme: themeToUse,
+          size: '1024x1024',
+          apiKey: apiKey,
+        });
+
+        // Add generated images to collage
+        for (const image of images) {
+          try {
+            const img = new Image();
+            await new Promise((resolve, reject) => {
+              img.onload = () => {
+                addCollageImage(image.name, image.url, img);
+                resolve(null);
+              };
+              img.onerror = reject;
+              img.src = image.url; // base64 data URL
+            });
+          } catch (err) {
+            console.error(`Failed to load image ${image.name}:`, err);
+          }
+        }
+        currentProgress++;
+        setGenerationProgress(currentProgress);
+      }
+    } catch (error: any) {
+      console.error('Failed to generate images:', error);
+      const errorMessage = error?.message || error?.toString() || 'Unknown error occurred';
+      alert(`Failed to generate images: ${errorMessage}`);
+    } finally {
+      setIsGenerating(false);
+      setGenerationProgress(0);
+      setGenerationTotal(0);
+    }
+  };
+
   const handleDragStart = (e: React.DragEvent, layerId: string) => {
     setDraggedLayerId(layerId);
     e.dataTransfer.effectAllowed = 'move';
@@ -220,7 +389,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
     selectLayer(null);
   };
 
-  const handleExport = async () => {
+  const handleExport = async (format: 'png' | 'jpg' | 'webp', quality: number, scale: number) => {
     try {
       // Find the canvas-wrapper div which contains all layers
       const canvasWrapper = document.querySelector('.canvas-wrapper') as HTMLElement;
@@ -229,50 +398,143 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
         return;
       }
 
-      // Create a temporary canvas to combine all layers
+      // Create a temporary canvas to combine all layers with scaling
       const exportCanvas = document.createElement('canvas');
-      exportCanvas.width = canvasSize.width;
-      exportCanvas.height = canvasSize.height;
-      const ctx = exportCanvas.getContext('2d');
+      exportCanvas.width = canvasSize.width * scale;
+      exportCanvas.height = canvasSize.height * scale;
+      const ctx = exportCanvas.getContext('2d', { willReadFrequently: true });
       if (!ctx) return;
+
+      // Scale the context
+      ctx.scale(scale, scale);
 
       // Fill with white background
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
 
-      // Get the WebGL canvas (background gradient)
-      const webglCanvas = canvasWrapper.querySelector('canvas') as HTMLCanvasElement;
-      if (webglCanvas) {
-        ctx.drawImage(webglCanvas, 0, 0);
-      }
+      // Helper function to convert SVG data URL to image
+      const loadImage = (src: string): Promise<HTMLImageElement> => {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = src;
+        });
+      };
 
-      // Get all layer images and effects
-      const layers = canvasWrapper.querySelectorAll('.image-layer, .effect-layer');
-      for (const layer of Array.from(layers)) {
-        const element = layer as HTMLElement;
-        const img = element.querySelector('img');
-        if (img && img.complete) {
-          // Apply transforms and draw
-          const transform = element.style.transform;
+      // Helper function to render a div with background-image to canvas
+      const renderBackgroundImage = async (element: HTMLElement) => {
+        const bgImage = element.style.backgroundImage;
+        if (!bgImage || bgImage === 'none') return;
+
+        // Extract URL from backgroundImage style
+        const match = bgImage.match(/url\(["']?([^"']*)["']?\)/);
+        if (!match) return;
+
+        const imageUrl = match[1];
+        try {
+          const img = await loadImage(imageUrl);
+          const opacity = parseFloat(element.style.opacity || '1');
+          const blendMode = element.style.mixBlendMode;
+
           ctx.save();
-          // Note: For a complete implementation, you'd need to parse CSS transforms
-          // This is a simplified version
-          ctx.globalAlpha = parseFloat(element.style.opacity || '1');
+          ctx.globalAlpha = opacity;
+          if (blendMode && blendMode !== '' && blendMode !== 'normal') {
+            ctx.globalCompositeOperation = blendMode as GlobalCompositeOperation;
+          }
           ctx.drawImage(img, 0, 0, canvasSize.width, canvasSize.height);
           ctx.restore();
+        } catch (err) {
+          console.warn('Failed to load background image:', err);
+        }
+      };
+
+      // Collect all elements with z-index and sort them
+      const allElements: Array<{ element: HTMLElement | HTMLCanvasElement; zIndex: number; type: 'canvas' | 'div' }> = [];
+
+      // Get the WebGL gradient canvas (should be first, z-index 0 or negative)
+      const webglCanvas = canvasWrapper.querySelector('.canvas') as HTMLCanvasElement;
+      if (webglCanvas) {
+        allElements.push({ element: webglCanvas, zIndex: -1, type: 'canvas' });
+      }
+
+      // Get all canvas elements (collage, swooshes)
+      const allCanvases = canvasWrapper.querySelectorAll('canvas');
+      allCanvases.forEach((canvas) => {
+        if (canvas === webglCanvas) return; // Already added
+        const parent = canvas.parentElement;
+        if (!parent) return;
+
+        const style = window.getComputedStyle(parent);
+        const zIndex = parseInt(style.zIndex || '0');
+
+        allElements.push({ element: canvas as HTMLCanvasElement, zIndex, type: 'canvas' });
+      });
+
+      // Get all divs with backgroundImage (effects)
+      const allDivs = canvasWrapper.querySelectorAll('div');
+      allDivs.forEach((div) => {
+        const htmlDiv = div as HTMLElement;
+        if (!htmlDiv.style.backgroundImage || htmlDiv.style.backgroundImage === 'none') return;
+
+        const zIndex = parseInt(htmlDiv.style.zIndex || '0');
+        allElements.push({ element: htmlDiv, zIndex, type: 'div' });
+      });
+
+      // Sort by z-index
+      allElements.sort((a, b) => a.zIndex - b.zIndex);
+
+      // Render all elements in order
+      for (const { element, type } of allElements) {
+        if (type === 'canvas') {
+          const canvas = element as HTMLCanvasElement;
+
+          // Get styles from the canvas element itself (for swooshes)
+          // and from parent (for other canvases)
+          const canvasStyle = window.getComputedStyle(canvas);
+          const parent = canvas.parentElement;
+          const parentStyle = parent ? window.getComputedStyle(parent) : null;
+
+          // Blend mode is on the canvas element itself for swooshes
+          const blendMode = canvasStyle.mixBlendMode !== 'normal'
+            ? canvasStyle.mixBlendMode
+            : (parentStyle ? parentStyle.mixBlendMode : 'normal');
+
+          // Opacity could be on either element
+          const canvasOpacity = parseFloat(canvasStyle.opacity || '1');
+          const parentOpacity = parentStyle ? parseFloat(parentStyle.opacity || '1') : 1;
+          const opacity = canvasOpacity * parentOpacity;
+
+          ctx.save();
+          ctx.globalAlpha = opacity;
+
+          // Apply blend mode if not normal
+          if (blendMode && blendMode !== 'normal') {
+            ctx.globalCompositeOperation = blendMode as GlobalCompositeOperation;
+          }
+
+          // Draw canvas at full size
+          ctx.drawImage(canvas, 0, 0, canvasSize.width, canvasSize.height);
+          ctx.restore();
+        } else {
+          await renderBackgroundImage(element as HTMLElement);
         }
       }
+
+      // Determine MIME type and quality
+      const mimeType = format === 'png' ? 'image/png' : format === 'jpg' ? 'image/jpeg' : 'image/webp';
+      const qualityValue = format === 'png' ? undefined : quality / 100;
 
       // Convert to blob and download
       exportCanvas.toBlob((blob) => {
         if (!blob) return;
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.download = `tapestry-${Date.now()}.png`;
+        link.download = `tapestry-${Date.now()}.${format}`;
         link.href = url;
         link.click();
         URL.revokeObjectURL(url);
-      }, 'image/png');
+      }, mimeType, qualityValue);
     } catch (error) {
       console.error('Export failed:', error);
     }
@@ -282,145 +544,277 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
 
   return (
     <div className="right-sidebar">
-      {/* Collage Panel */}
-      <div className="sidebar-section">
-        <details className="collapsible-panel" open>
-          <summary className="panel-header">
-            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <ChevronDown size={12} style={{ flexShrink: 0 }} />
-              COLLAGE
-            </span>
-          </summary>
-          <div className="panel-content">
-            <input
-              ref={collageFileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleCollageFileChange}
-              style={{ display: 'none' }}
-            />
-            <button
-              className="upload-button"
-              onClick={() => collageFileInputRef.current?.click()}
-            >
-              + Add Images ({collageImages.length})
-            </button>
+      {/* Collage Generator Section */}
+      <div className="sidebar-section" style={{ borderBottom: '1px solid var(--color-border-light)' }}>
+        <div className="section-header">
+          <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <Sparkles size={14} />
+            COLLAGE GENERATOR
+          </h3>
+        </div>
+        <div style={{ marginTop: 'var(--space-4)' }}>
+          {/* Description */}
+          <div style={{
+            fontSize: '11px',
+            color: 'var(--color-text-tertiary)',
+            marginBottom: 'var(--space-4)',
+            lineHeight: 1.4
+          }}>
+            Generate AI images from countries around the world
+          </div>
 
-            {/* Image thumbnails */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px', marginTop: '8px' }}>
-              {collageImages.length > 0 ? (
-                collageImages.map((img) => (
-                  <div
-                    key={img.id}
-                    style={{
-                      aspectRatio: '1',
-                      backgroundImage: `url(${img.url})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      position: 'relative',
-                      borderRadius: '4px',
-                      overflow: 'hidden',
-                    }}
-                    title={img.name}
-                  >
-                    <button
-                      onClick={() => removeCollageImage(img.id)}
-                      style={{
-                        position: 'absolute',
-                        top: '2px',
-                        right: '2px',
-                        background: 'rgba(0,0,0,0.7)',
-                        color: 'white',
-                        border: 'none',
-                        width: '18px',
-                        height: '18px',
-                        fontSize: '14px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        borderRadius: '3px',
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))
-              ) : (
-                // Empty placeholder thumbnails showing region-specific country suggestions
+          {/* Generation Mode Selection */}
+          <div className="property-group">
+              <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
+                <button
+                  onClick={() => {
+                    setSelectedCountries([]);
+                    setShowCountryDropdown(false);
+                  }}
+                  className="parameter-button"
+                  style={{
+                    flex: 1,
+                    background: selectedCountries.length === 0 && !showCountryDropdown ? '#163300' : 'var(--color-surface-secondary)',
+                    color: selectedCountries.length === 0 && !showCountryDropdown ? '#ffffff' : 'var(--color-text-primary)',
+                    border: selectedCountries.length === 0 && !showCountryDropdown ? '1px solid #163300' : '1px solid var(--color-border-light)'
+                  }}
+                >
+                  Random
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCountryDropdown(true);
+                  }}
+                  className="parameter-button"
+                  style={{
+                    flex: 1,
+                    background: selectedCountries.length > 0 || showCountryDropdown ? '#163300' : 'var(--color-surface-secondary)',
+                    color: selectedCountries.length > 0 || showCountryDropdown ? '#ffffff' : 'var(--color-text-primary)',
+                    border: selectedCountries.length > 0 || showCountryDropdown ? '1px solid #163300' : '1px solid var(--color-border-light)'
+                  }}
+                >
+                  Select
+                </button>
+              </div>
+
+              {/* Theme selector - always visible */}
+              <label className="property-label" style={{ marginTop: 'var(--space-2)' }}>Theme</label>
+              <select
+                className="property-select"
+                value={generateTheme}
+                onChange={(e) => setGenerateTheme(e.target.value as MasterPromptTheme)}
+              >
+                <option value="mixed">Mixed</option>
+                <option value="nature">Nature</option>
+                <option value="cities">Cities</option>
+                <option value="textures">Textures</option>
+                <option value="culture">Culture</option>
+              </select>
+
+              {/* Random Mode - Show count only when not in Select mode */}
+              {selectedCountries.length === 0 && !showCountryDropdown && (
                 <>
-                  {(() => {
-                    const regionCountries: Record<string, string[]> = {
-                      'australasia_sasia': ['🇦🇺 AUS', '🇳🇿 NZ', '🇮🇳 IN', '🇵🇰 PK', '🇧🇩 BD', '🇱🇰 LK', '🇳🇵 NP', '🇫🇯 FJ', '🇵🇬 PG'],
-                      'namerica_easia_pink': ['🇺🇸 USA', '🇨🇦 CA', '🇯🇵 JP', '🇰🇷 KR', '🇨🇳 CN', '🇹🇼 TW', '🇭🇰 HK', '🇲🇴 MO', '🇲🇳 MN'],
-                      'europe_seasia': ['🇬🇧 UK', '🇫🇷 FR', '🇩🇪 DE', '🇹🇭 TH', '🇻🇳 VN', '🇸🇬 SG', '🇲🇾 MY', '🇵🇭 PH', '🇮🇩 ID'],
-                      'neurope_wafrica': ['🇸🇪 SE', '🇳🇴 NO', '🇫🇮 FI', '🇳🇬 NG', '🇬🇭 GH', '🇸🇳 SN', '🇨🇮 CI', '🇲🇱 ML', '🇧🇯 BJ'],
-                      'namerica_samerica': ['🇺🇸 USA', '🇨🇦 CA', '🇲🇽 MX', '🇧🇷 BR', '🇦🇷 AR', '🇨🇱 CL', '🇨🇴 CO', '🇵🇪 PE', '🇻🇪 VE'],
-                      'namerica_easia_green': ['🇺🇸 USA', '🇨🇦 CA', '🇯🇵 JP', '🇰🇷 KR', '🇨🇳 CN', '🇹🇼 TW', '🇭🇰 HK', '🇲🇴 MO', '🇲🇳 MN'],
-                      'nafrica_europe': ['🇪🇬 EG', '🇲🇦 MA', '🇹🇳 TN', '🇬🇧 UK', '🇫🇷 FR', '🇪🇸 ES', '🇮🇹 IT', '🇵🇹 PT', '🇬🇷 GR'],
-                      'csamerica_europe': ['🇲🇽 MX', '🇬🇹 GT', '🇧🇷 BR', '🇬🇧 UK', '🇫🇷 FR', '🇩🇪 DE', '🇪🇸 ES', '🇮🇹 IT', '🇳🇱 NL'],
-                      'middleeast_australasia': ['🇦🇪 UAE', '🇸🇦 SA', '🇶🇦 QA', '🇦🇺 AUS', '🇳🇿 NZ', '🇮🇱 IL', '🇯🇴 JO', '🇰🇼 KW', '🇴🇲 OM'],
-                      'europe_uk': ['🇬🇧 UK', '🇫🇷 FR', '🇩🇪 DE', '🇮🇹 IT', '🇪🇸 ES', '🇳🇱 NL', '🇧🇪 BE', '🇨🇭 CH', '🇦🇹 AT'],
-                      'custom': ['🇬🇧 UK', '🇺🇸 USA', '🇦🇺 AUS', '🇯🇵 JP', '🇧🇷 BR', '🇮🇳 IN', '🇿🇦 ZA', '🇩🇪 DE', '🇨🇳 CN'],
-                    };
-                    const countries = regionCountries[selectedRegion] || regionCountries['custom'];
-                    return countries.map((country) => (
-                    <div
-                      key={country}
-                      onClick={() => collageFileInputRef.current?.click()}
-                      style={{
-                        aspectRatio: '1',
-                        background: 'var(--color-surface-secondary)',
-                        border: '1px dashed var(--color-border)',
-                        borderRadius: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        fontSize: '9px',
-                        fontWeight: 'var(--font-weight-medium)',
-                        color: 'var(--color-text-tertiary)',
-                        transition: 'all var(--transition-fast)',
-                        textAlign: 'center',
-                        padding: '4px',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'var(--color-surface-hover)';
-                        e.currentTarget.style.borderColor = 'var(--color-border-hover)';
-                        e.currentTarget.style.color = 'var(--color-text-secondary)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'var(--color-surface-secondary)';
-                        e.currentTarget.style.borderColor = 'var(--color-border)';
-                        e.currentTarget.style.color = 'var(--color-text-tertiary)';
-                      }}
-                      title={`Add ${country.split(' ')[1]} images`}
-                    >
-                      {country}
-                    </div>
-                    ));
-                  })()}
+                  <label className="property-label" style={{ marginTop: 'var(--space-3)' }}>Count</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={generateCount}
+                    onChange={(e) => setGenerateCount(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
+                    className="property-input"
+                    style={{
+                      width: '100%',
+                      padding: 'var(--space-2)',
+                      background: 'var(--color-surface-secondary)',
+                      border: '1px solid var(--color-border-light)',
+                      borderRadius: 'var(--radius-sm)',
+                      color: 'var(--color-text-primary)',
+                      fontSize: '11px'
+                    }}
+                  />
                 </>
+              )}
+
+              {/* Show countries selector when in Select mode OR dropdown is open */}
+              {(selectedCountries.length > 0 || showCountryDropdown) && (
+                <div style={{ position: 'relative', marginTop: 'var(--space-3)' }} ref={countryDropdownRef}>
+                  <label className="property-label">Countries</label>
+                  <button
+                    onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+                    className="property-select"
+                    style={{
+                      textAlign: 'left',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      width: '100%'
+                    }}
+                  >
+                    <span>
+                      {selectedCountries.length === 0
+                        ? 'Select countries...'
+                        : `${selectedCountries.length} selected`}
+                    </span>
+                    <span style={{ fontSize: '8px' }}>{showCountryDropdown ? '▲' : '▼'}</span>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {showCountryDropdown && gradient?.countries && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 4px)',
+                      left: '0',
+                      right: '0',
+                      background: 'var(--color-surface)',
+                      border: '1px solid var(--color-border-light)',
+                      borderRadius: 'var(--radius-md)',
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      zIndex: 1000,
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                    }}>
+                      {gradient.countries.map((country) => (
+                        <label
+                          key={country}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: 'var(--space-2)',
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            gap: 'var(--space-2)',
+                            transition: 'background var(--transition-fast)'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-secondary)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedCountries.includes(country)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedCountries([...selectedCountries, country]);
+                              } else {
+                                setSelectedCountries(selectedCountries.filter(c => c !== country));
+                              }
+                            }}
+                            style={{ cursor: 'pointer' }}
+                          />
+                          <span>{COUNTRY_FLAGS[country] || ''}</span>
+                          {country}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
-            <div className="property-group" style={{ marginTop: '12px' }}>
-              <label className="property-label">Fog</label>
-              <div className="parameter-control">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={collageParams.fog * 100}
-                  onChange={(e) => setCollageParam('fog', parseFloat(e.target.value) / 100)}
-                  className="parameter-slider"
-                />
-                <span className="parameter-value">{Math.round(collageParams.fog * 100)}%</span>
-              </div>
-            </div>
+            {/* Generate Button */}
+            <button
+              className="upload-button"
+              onClick={() => handleGenerateImages()}
+              disabled={isGenerating}
+              style={{
+                opacity: isGenerating ? 0.5 : 1,
+                cursor: isGenerating ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 'var(--space-2)'
+              }}
+            >
+              {isGenerating ? (
+                <>
+                  <span style={{
+                    display: 'inline-block',
+                    width: '12px',
+                    height: '12px',
+                    border: '2px solid currentColor',
+                    borderTopColor: 'transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite'
+                  }} />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={14} />
+                  {selectedCountries.length > 0
+                    ? `Generate ${selectedCountries.length} Image${selectedCountries.length > 1 ? 's' : ''}`
+                    : `Generate ${generateCount} Image${generateCount > 1 ? 's' : ''}`}
+                </>
+              )}
+            </button>
 
-            <div className="property-group">
+            {/* Progress Bar */}
+            {isGenerating && generationTotal > 0 && (
+              <div className="property-group">
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: 'var(--space-2)',
+                  fontSize: '10px',
+                  color: 'var(--color-text-tertiary)'
+                }}>
+                  <span>Generating {generationProgress} of {generationTotal}</span>
+                  <span>{Math.round((generationProgress / generationTotal) * 100)}%</span>
+                </div>
+                <div style={{
+                  width: '100%',
+                  height: '6px',
+                  background: 'var(--color-surface-secondary)',
+                  borderRadius: 'var(--radius-full)',
+                  overflow: 'hidden',
+                  border: '1px solid var(--color-border-light)'
+                }}>
+                  <div style={{
+                    width: `${(generationProgress / generationTotal) * 100}%`,
+                    height: '100%',
+                    background: theme === 'dark'
+                      ? 'linear-gradient(90deg, var(--color-primary-dark), var(--color-primary))'
+                      : 'linear-gradient(90deg, #163300, #9fe870)',
+                    transition: 'width 0.3s ease',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}>
+                    {/* Animated shimmer effect */}
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: '-100%',
+                      width: '100%',
+                      height: '100%',
+                      background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
+                      animation: 'shimmer 1.5s infinite'
+                    }} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Clear Images Button */}
+            {collageImages.length > 0 && !isGenerating && (
+              <button
+                onClick={clearAllCollageImages}
+                className="parameter-button"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 'var(--space-2)'
+                }}
+              >
+                <Trash2 size={12} />
+                Clear All Images ({collageImages.length})
+              </button>
+            )}
+
+            {/* Collage Controls - Only show when images exist */}
+            {collageImages.length > 0 && (
+              <>
+                <div className="property-group" style={{ marginTop: '12px' }}>
               <label className="property-label">Vignette</label>
               <div className="parameter-control">
                 <input
@@ -517,31 +911,29 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
               </div>
             </div>
 
-            <div className="property-group">
-              <label className="property-label">Blend Mode</label>
-              <select
-                className="property-select"
-                value={collageBlendMode}
-                onChange={(e) => setCollageBlendMode(e.target.value)}
-              >
-                <option value="source-over">Normal</option>
-                <option value="multiply">Multiply</option>
-                <option value="screen">Screen</option>
-                <option value="overlay">Overlay</option>
-                <option value="soft-light">Soft Light</option>
-                <option value="luminosity">Luminosity</option>
-              </select>
-            </div>
-          </div>
-        </details>
+                <div className="property-group">
+                  <label className="property-label">Blend Mode</label>
+                  <select
+                    className="property-select"
+                    value={collageBlendMode}
+                    onChange={(e) => setCollageBlendMode(e.target.value)}
+                  >
+                    <option value="source-over">Normal</option>
+                    <option value="soft-light">Soft Light</option>
+                  </select>
+                </div>
+              </>
+            )}
+        </div>
       </div>
 
       {/* Position - Only show when image layer is selected */}
       {selectedLayer && selectedLayer.type === 'image' && (
-        <div className="sidebar-section">
-          <details className="collapsible-panel" open>
-            <summary className="panel-header">POSITION</summary>
-            <div className="panel-content">
+        <div className="sidebar-section" style={{ borderBottom: '1px solid var(--color-border-light)' }}>
+          <div className="section-header">
+            <h3 className="section-title">POSITION</h3>
+          </div>
+          <div style={{ marginTop: 'var(--space-4)' }}>
               <div className="property-group">
                 <label className="property-label">Position</label>
                 <div className="property-row">
@@ -626,17 +1018,17 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
                   </div>
                 </div>
               </div>
-            </div>
-          </details>
+          </div>
         </div>
       )}
 
       {/* Appearance - Only show when image layer is selected */}
       {selectedLayer && selectedLayer.type === 'image' && (
-        <div className="sidebar-section">
-          <details className="collapsible-panel" open>
-            <summary className="panel-header">APPEARANCE</summary>
-            <div className="panel-content">
+        <div className="sidebar-section" style={{ borderBottom: '1px solid var(--color-border-light)' }}>
+          <div className="section-header">
+            <h3 className="section-title">APPEARANCE</h3>
+          </div>
+          <div style={{ marginTop: 'var(--space-4)' }}>
               <div className="property-group">
                 <label className="property-label">Blending Mode</label>
                 <select
@@ -784,8 +1176,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
                   </button>
                 </div>
               </div>
-            </div>
-          </details>
+          </div>
         </div>
       )}
 
@@ -824,10 +1215,19 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
           />
         </div>
 
-        <button className="export-button" onClick={handleExport} title="Export">
+        <button className="export-button" onClick={() => setShowExportModal(true)} title="Export">
           Export
         </button>
       </div>
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onExport={handleExport}
+        currentWidth={canvasSize.width}
+        currentHeight={canvasSize.height}
+      />
     </div>
   );
 };

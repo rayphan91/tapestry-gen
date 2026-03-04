@@ -155,7 +155,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({ collapsed }) => {
         {isRegionExpanded && (
           <div style={{ marginTop: 'var(--space-4)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-          <div className="custom-dropdown" ref={dropdownRef} style={{ flex: 1 }}>
+          <div className="custom-dropdown" ref={dropdownRef}>
             <button
               className="custom-dropdown-button"
               onClick={() => setIsRegionOpen(!isRegionOpen)}
@@ -167,10 +167,11 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({ collapsed }) => {
                     alt={selectedGradient.displayName}
                     className="region-thumbnail"
                     style={{
-                      width: '32px',
-                      height: '32px',
+                      width: '24px',
+                      height: '24px',
                       objectFit: 'cover',
                       borderRadius: 'var(--radius-xs)',
+                      flexShrink: 0,
                     }}
                   />
                 ) : (
@@ -206,10 +207,11 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({ collapsed }) => {
                         alt={gradient.displayName}
                         className="region-thumbnail"
                         style={{
-                          width: '32px',
-                          height: '32px',
+                          width: '24px',
+                          height: '24px',
                           objectFit: 'cover',
                           borderRadius: 'var(--radius-xs)',
+                          flexShrink: 0,
                         }}
                       />
                     ) : (

@@ -44,6 +44,7 @@ export interface RegionalGradient {
   noiseParamsB?: NoiseParams;    // Optional separate params for second color
   description?: string;
   thumbnail?: string;            // Path to thumbnail image
+  countries?: string[];          // List of countries in this region for AI generation
 }
 
 export const DEFAULT_NOISE_PARAMS: NoiseParams = {
@@ -73,6 +74,7 @@ export const REGIONAL_GRADIENTS: RegionalGradient[] = [
     noiseParams: { ...DEFAULT_NOISE_PARAMS, scale: 1.2, octaves: 3 },
     description: 'Australasia & South Asia - Aqua & Purple',
     thumbnail: '/gradients/australasia_sasia.png',
+    countries: ['Australia', 'New Zealand', 'India', 'Pakistan', 'Bangladesh', 'Sri Lanka', 'Nepal', 'Fiji', 'Papua New Guinea'],
   },
   {
     id: 'namerica_easia_pink',
@@ -89,6 +91,7 @@ export const REGIONAL_GRADIENTS: RegionalGradient[] = [
     noiseParams: { ...DEFAULT_NOISE_PARAMS, scale: 1.3, octaves: 2 },
     description: 'North America & East Asia - Pink & Orange',
     thumbnail: '/gradients/namerica_easia_pink.png',
+    countries: ['United States', 'Canada', 'Japan', 'South Korea', 'China', 'Taiwan', 'Hong Kong', 'Mongolia'],
   },
   {
     id: 'europe_seasia',
@@ -105,6 +108,7 @@ export const REGIONAL_GRADIENTS: RegionalGradient[] = [
     noiseParams: { ...DEFAULT_NOISE_PARAMS, scale: 1.5, octaves: 2 },
     description: 'Europe & Southeast Asia - Blue & Yellow',
     thumbnail: '/gradients/europe_seasia.png',
+    countries: ['United Kingdom', 'France', 'Germany', 'Thailand', 'Vietnam', 'Singapore', 'Malaysia', 'Philippines', 'Indonesia'],
   },
   {
     id: 'neurope_wafrica',
@@ -121,6 +125,7 @@ export const REGIONAL_GRADIENTS: RegionalGradient[] = [
     noiseParams: { ...DEFAULT_NOISE_PARAMS, scale: 1.2, octaves: 2 },
     description: 'Northern Europe & West Africa - Dark Green',
     thumbnail: '/gradients/neurope_wafrica.png',
+    countries: ['Sweden', 'Norway', 'Finland', 'Denmark', 'Nigeria', 'Ghana', 'Senegal', 'Ivory Coast', 'Mali'],
   },
   {
     id: 'namerica_samerica',
@@ -137,6 +142,7 @@ export const REGIONAL_GRADIENTS: RegionalGradient[] = [
     noiseParams: { ...DEFAULT_NOISE_PARAMS, scale: 1.3, octaves: 2 },
     description: 'North & South America - Red & Blue',
     thumbnail: '/gradients/namerica_samerica.png',
+    countries: ['United States', 'Canada', 'Mexico', 'Brazil', 'Argentina', 'Chile', 'Colombia', 'Peru', 'Venezuela'],
   },
   {
     id: 'namerica_easia_green',
@@ -153,6 +159,7 @@ export const REGIONAL_GRADIENTS: RegionalGradient[] = [
     noiseParams: { ...DEFAULT_NOISE_PARAMS, scale: 1.4, octaves: 2 },
     description: 'North America & East Asia - Green, Blue & Yellow',
     thumbnail: '/gradients/namerica_easia_green.png',
+    countries: ['United States', 'Canada', 'Japan', 'South Korea', 'China'],
   },
   {
     id: 'nafrica_europe',
@@ -169,6 +176,7 @@ export const REGIONAL_GRADIENTS: RegionalGradient[] = [
     noiseParams: { ...DEFAULT_NOISE_PARAMS, scale: 1.1, octaves: 2 },
     description: 'North Africa & Europe - Green, Yellow & Orange',
     thumbnail: '/gradients/nafrica_europe.png',
+    countries: ['Egypt', 'Morocco', 'Tunisia', 'Algeria', 'Spain', 'Italy', 'Portugal', 'Greece'],
   },
   {
     id: 'csamerica_europe',
@@ -185,6 +193,7 @@ export const REGIONAL_GRADIENTS: RegionalGradient[] = [
     noiseParams: { ...DEFAULT_NOISE_PARAMS, scale: 1.0, octaves: 2 },
     description: 'Central & South America + Europe - Pink & Yellow',
     thumbnail: '/gradients/csamerica_europe.png',
+    countries: ['Mexico', 'Brazil', 'Argentina', 'Colombia', 'Spain', 'France', 'Germany', 'Netherlands', 'Belgium'],
   },
   {
     id: 'middleeast_australasia',
@@ -201,6 +210,7 @@ export const REGIONAL_GRADIENTS: RegionalGradient[] = [
     noiseParams: { ...DEFAULT_NOISE_PARAMS, scale: 1.2, octaves: 2 },
     description: 'Middle East & Australasia - Pink & Blue',
     thumbnail: '/gradients/middleeast_australasia.png',
+    countries: ['United Arab Emirates', 'Saudi Arabia', 'Qatar', 'Israel', 'Jordan', 'Australia', 'New Zealand'],
   },
   {
     id: 'europe_uk',
@@ -217,6 +227,7 @@ export const REGIONAL_GRADIENTS: RegionalGradient[] = [
     noiseParams: { ...DEFAULT_NOISE_PARAMS, scale: 1.5, octaves: 4, gain: 0.6 },
     description: 'Europe & UK - Orange & Blue',
     thumbnail: '/gradients/europe_uk.png',
+    countries: ['United Kingdom', 'France', 'Germany', 'Italy', 'Spain', 'Netherlands', 'Belgium', 'Switzerland', 'Austria'],
   },
   {
     id: 'custom',

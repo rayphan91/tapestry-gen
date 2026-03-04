@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTapestryStore } from '@/store/useTapestryStore';
 import { REGIONAL_GRADIENTS } from '@/types';
 import { WebGLNoiseRenderer } from '@/utils/shaderNoise';
@@ -7,14 +7,15 @@ import { ImageLayer } from './ImageLayer';
 import { EffectsLayer } from './EffectsLayer';
 import { ProceduralCollage } from './ProceduralCollage';
 import { AnimationControls } from '../Animation/AnimationControls';
-import { AnimationModeToggle } from '../Animation/AnimationModeToggle';
-import { Sun, Moon } from 'lucide-react';
+import { CanvasToolbar } from './CanvasToolbar';
+import { HelpButton, HelpOverlay } from '../Help/HelpOverlay';
 import './CanvasArea.css';
 
 export const CanvasArea: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<WebGLNoiseRenderer | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   const selectedRegion = useTapestryStore((state) => state.selectedRegion);
   const customNoiseParams = useTapestryStore((state) => state.customNoiseParams);
@@ -61,6 +62,7 @@ export const CanvasArea: React.FC = () => {
   const collageSeed = useTapestryStore((state) => state.collageSeed);
   const collageParams = useTapestryStore((state) => state.collageParams);
   const collageBlendMode = useTapestryStore((state) => state.collageBlendMode);
+  const updateCollageImagePosition = useTapestryStore((state) => state.updateCollageImagePosition);
   const addCollageImage = useTapestryStore((state) => state.addCollageImage);
   const isAnimating = useTapestryStore((state) => state.isAnimating);
   const animationDuration = useTapestryStore((state) => state.animationDuration);
@@ -77,6 +79,59 @@ export const CanvasArea: React.FC = () => {
     img.onerror = () => console.log('No background image found');
     img.src = '/assets/default-background.jpg';
   }, []);
+
+  // Set fit-to-canvas zoom as default on mount
+  React.useEffect(() => {
+    const setDefaultZoom = () => {
+      const canvasArea = document.querySelector('.canvas-area');
+      if (!canvasArea) return;
+
+      const viewportWidth = canvasArea.clientWidth;
+      const viewportHeight = canvasArea.clientHeight;
+
+      // Account for toolbar height and padding
+      const toolbarHeight = 80;
+      const padding = 40;
+      const availableWidth = viewportWidth - padding * 2;
+      const availableHeight = viewportHeight - toolbarHeight - padding * 2;
+
+      // Calculate zoom that fits both dimensions
+      const zoomWidth = availableWidth / canvasSize.width;
+      const zoomHeight = availableHeight / canvasSize.height;
+      const fitZoom = Math.min(zoomWidth, zoomHeight, 1); // Cap at 100%
+
+      setZoom(Math.max(0.1, fitZoom));
+    };
+
+    // Run on mount and after a short delay to ensure layout is ready
+    setTimeout(setDefaultZoom, 100);
+  }, []); // Only run once on mount
+
+  // Touchpad gestures: pinch zoom and two-finger pan
+  React.useEffect(() => {
+    const canvasArea = document.querySelector('.canvas-area');
+    if (!canvasArea) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // Detect pinch zoom (ctrl + wheel or pinch gesture)
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+
+        // Calculate zoom delta
+        const delta = -e.deltaY * 0.01;
+        const newZoom = Math.max(0.1, Math.min(2, zoom + delta));
+        setZoom(newZoom);
+      }
+      // Two-finger pan would be handled by default scrolling behavior
+      // but since canvas is centered, we don't need to implement pan
+    };
+
+    canvasArea.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      canvasArea.removeEventListener('wheel', handleWheel);
+    };
+  }, [zoom, setZoom]);
 
   // Get current gradient and params
   const gradient = REGIONAL_GRADIENTS.find((g) => g.id === selectedRegion);
@@ -221,33 +276,6 @@ export const CanvasArea: React.FC = () => {
         </div>
       )}
 
-      {/* Canvas Controls Overlay */}
-      <div className="canvas-controls-wrapper">
-        <div className="canvas-controls">
-          <button
-            className="zoom-button"
-            onClick={() => handleZoomChange(-0.1)}
-            aria-label="Zoom out"
-          >
-            -
-          </button>
-          <span className="zoom-value">{Math.round(zoom * 100)}%</span>
-          <button
-            className="zoom-button"
-            onClick={() => handleZoomChange(0.1)}
-            aria-label="Zoom in"
-          >
-            +
-          </button>
-        </div>
-        <button
-          className="theme-toggle-canvas-btn"
-          onClick={toggleTheme}
-          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-        >
-          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
-      </div>
 
       <div className="canvas-wrapper">
         <div
@@ -276,6 +304,7 @@ export const CanvasArea: React.FC = () => {
               animationTime={currentAnimationTime}
               animationDuration={animationDuration}
               isAnimating={isAnimating}
+              onImagePositionUpdate={updateCollageImagePosition}
             />
           )}
           <canvas ref={canvasRef} className="canvas" />
@@ -321,11 +350,17 @@ export const CanvasArea: React.FC = () => {
         </div>
       </div>
 
-      {/* Animation Mode Toggle - always visible at bottom center */}
-      <AnimationModeToggle />
+      {/* Canvas Toolbar - combines zoom, animation mode, and theme toggle */}
+      <CanvasToolbar />
 
       {/* Animation Controls - show when animating */}
       {isAnimating && <AnimationControls />}
+
+      {/* Help Button */}
+      <HelpButton onClick={() => setShowHelp(true)} />
+
+      {/* Help Overlay */}
+      <HelpOverlay isActive={showHelp} onClose={() => setShowHelp(false)} />
     </div>
   );
 };

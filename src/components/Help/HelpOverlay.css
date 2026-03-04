@@ -1,0 +1,281 @@
+.help-button {
+  position: absolute;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 200;
+}
+
+.help-button:hover {
+  background: var(--color-border-light);
+  transform: scale(1.05);
+}
+
+.help-overlay-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 999;
+  animation: fadeIn 0.3s ease;
+}
+
+.help-tooltips {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.help-tooltip {
+  position: absolute;
+  pointer-events: auto;
+  animation: tooltipPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.help-tooltip-content {
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: var(--space-4) var(--space-5);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  max-width: 300px;
+  position: relative;
+}
+
+.help-tooltip-content::before {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transform: rotate(45deg);
+}
+
+.help-tooltip-content h4 {
+  margin: 0 0 var(--space-2) 0;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  color: rgba(255, 255, 255, 0.85);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.help-tooltip-content p {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.5;
+  font-weight: var(--font-weight-normal);
+}
+
+/* Tooltip positions */
+.help-tooltip-region {
+  top: 180px;
+  left: calc(var(--sidebar-width) + var(--space-6));
+}
+
+.help-tooltip-region .help-tooltip-content::before {
+  top: 20px;
+  left: -7px;
+  border-right: none;
+  border-top: none;
+}
+
+.help-tooltip-noise {
+  top: 360px;
+  left: calc(var(--sidebar-width) + var(--space-6));
+}
+
+.help-tooltip-noise .help-tooltip-content::before {
+  top: 20px;
+  left: -7px;
+  border-right: none;
+  border-top: none;
+}
+
+.help-tooltip-effects {
+  bottom: 180px;
+  left: calc(var(--sidebar-width) + var(--space-6));
+}
+
+.help-tooltip-effects .help-tooltip-content::before {
+  bottom: 20px;
+  left: -7px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.help-tooltip-collage {
+  top: 100px;
+  right: calc(var(--sidebar-width) + var(--space-6));
+}
+
+.help-tooltip-collage .help-tooltip-content::before {
+  top: 20px;
+  right: -7px;
+  border-left: none;
+  border-top: none;
+}
+
+.help-tooltip-collage-controls {
+  top: 380px;
+  right: calc(var(--sidebar-width) + var(--space-6));
+}
+
+.help-tooltip-collage-controls .help-tooltip-content::before {
+  top: 20px;
+  right: -7px;
+  border-left: none;
+  border-top: none;
+}
+
+.help-tooltip-toolbar {
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.help-tooltip-toolbar .help-tooltip-content::before {
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  border-left: none;
+  border-bottom: none;
+}
+
+.help-tooltip-export {
+  bottom: 180px;
+  right: calc(var(--sidebar-width) + var(--space-6));
+}
+
+.help-tooltip-export .help-tooltip-content::before {
+  bottom: 20px;
+  right: -7px;
+  border-left: none;
+  border-bottom: none;
+}
+
+.help-close-button {
+  position: fixed;
+  top: var(--space-6);
+  right: var(--space-6);
+  padding: var(--space-3) var(--space-5);
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  color: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  transition: all var(--transition-fast);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  pointer-events: auto;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.help-close-button:hover {
+  background: rgba(50, 50, 50, 0.9);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes tooltipPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Light theme adjustments */
+[data-theme="light"] .help-overlay-backdrop {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px);
+}
+
+[data-theme="light"] .help-tooltip-content {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+[data-theme="light"] .help-tooltip-content::before {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .help-tooltip-content h4 {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="light"] .help-tooltip-content p {
+  color: rgba(0, 0, 0, 0.55);
+}
+
+[data-theme="light"] .help-close-button {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  color: rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="light"] .help-close-button:hover {
+  background: rgba(240, 240, 240, 0.9);
+  border-color: rgba(0, 0, 0, 0.15);
+}

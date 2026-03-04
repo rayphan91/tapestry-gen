@@ -8,6 +8,8 @@ interface ProceduralCollageProps {
     name: string;
     url: string;
     img: HTMLImageElement;
+    position?: { x: number; y: number }; // Custom position (0-1 normalized)
+    scale?: number; // Custom scale multiplier
   }>;
   seed: number;
   params: {
@@ -22,6 +24,7 @@ interface ProceduralCollageProps {
   animationTime?: number; // Current animation time in seconds
   animationDuration?: number; // Total animation duration in seconds
   isAnimating?: boolean;
+  onImagePositionUpdate?: (id: string, position: { x: number; y: number }) => void;
 }
 
 function seededRng(seed: number) {
@@ -42,8 +45,13 @@ export const ProceduralCollage: React.FC<ProceduralCollageProps> = ({
   animationTime = 0,
   animationDuration = 8,
   isAnimating = false,
+  onImagePositionUpdate,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const [draggingId, setDraggingId] = React.useState<string | null>(null);
+  const [dragStart, setDragStart] = React.useState<{ x: number; y: number } | null>(null);
+  const [imageBounds, setImageBounds] = React.useState<Map<string, { x: number; y: number; width: number; height: number }>>(new Map());
 
   // Throttle animation updates for collage
   const throttledAnimationTime = React.useMemo(() => {
@@ -70,11 +78,13 @@ export const ProceduralCollage: React.FC<ProceduralCollageProps> = ({
     ctx.clearRect(0, 0, width, height);
 
     if (images.length === 0) {
+      setImageBounds(new Map());
       return;
     }
 
     const { fog, vignette, scaleSpread, rotation, grain, saturation } = params;
     const rng = seededRng(seed);
+    const newBounds = new Map<string, { x: number; y: number; width: number; height: number }>();
 
     // Create a grid-based distribution system for better coverage
     // Favor more columns to fill horizontal space better
@@ -98,14 +108,25 @@ export const ProceduralCollage: React.FC<ProceduralCollageProps> = ({
       const gridX = idx % gridCols;
       const gridY = Math.floor(idx / gridCols);
 
-      // Base position in grid cell with some randomness
-      const cellCenterX = gridX * cellWidth + cellWidth / 2;
-      const cellCenterY = gridY * cellHeight + cellHeight / 2;
+      // Use custom position if available, otherwise use grid-based positioning
+      let cellCenterX, cellCenterY, xOffset, yOffset;
 
-      // Add variation within cell (reduced overlap)
-      const offsetRange = 0.3; // 30% of cell size for variation
-      let xOffset = (rng() - 0.5) * cellWidth * offsetRange;
-      let yOffset = (rng() - 0.5) * cellHeight * offsetRange;
+      if (item.position) {
+        // Use custom position (normalized 0-1, convert to pixels)
+        cellCenterX = item.position.x * width;
+        cellCenterY = item.position.y * height;
+        xOffset = 0;
+        yOffset = 0;
+      } else {
+        // Base position in grid cell with some randomness
+        cellCenterX = gridX * cellWidth + cellWidth / 2;
+        cellCenterY = gridY * cellHeight + cellHeight / 2;
+
+        // Add variation within cell (reduced overlap)
+        const offsetRange = 0.3; // 30% of cell size for variation
+        xOffset = (rng() - 0.5) * cellWidth * offsetRange;
+        yOffset = (rng() - 0.5) * cellHeight * offsetRange;
+      }
 
       // Animation parameters
       let animScale = 1.0;
@@ -152,7 +173,12 @@ export const ProceduralCollage: React.FC<ProceduralCollageProps> = ({
       // Scale spread now affects all images uniformly by expanding the range
       const spreadInfluence = scaleSpread * 0.8; // 0-0.8 range based on slider
       const randomFactor = rng(); // 0-1 random value per image
-      const scale = (baseScale + spreadInfluence * randomFactor) * animScale;
+      let scale = (baseScale + spreadInfluence * randomFactor) * animScale;
+
+      // Apply custom scale if available
+      if (item.scale) {
+        scale *= item.scale;
+      }
       const iw = Math.min(width * scale, cellWidth * 1.6);
       const ih = iw / aspect;
 
@@ -160,6 +186,9 @@ export const ProceduralCollage: React.FC<ProceduralCollageProps> = ({
       const x = cellCenterX - iw / 2 + xOffset;
       const y = cellCenterY - ih / 2 + yOffset;
       const angle = (rng() - 0.5) * rotation * (Math.PI / 180) + (animAngleOffset * Math.PI / 180);
+
+      // Store bounds for hit testing
+      newBounds.set(item.id, { x, y, width: iw, height: ih });
 
       // Create offscreen canvas for this image
       const off = document.createElement('canvas');
@@ -234,21 +263,105 @@ export const ProceduralCollage: React.FC<ProceduralCollageProps> = ({
       }
       ctx.putImageData(imageData, 0, 0);
     }
+
+    // Update image bounds
+    setImageBounds(newBounds);
   }, [width, height, images, seed, params, blendMode, throttledAnimationTime, animationDuration, isAnimating]);
 
+  // Mouse event handlers for dragging
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!overlayRef.current || !onImagePositionUpdate) return;
+
+    const rect = overlayRef.current.getBoundingClientRect();
+    const mouseX = ((e.clientX - rect.left) / rect.width) * width;
+    const mouseY = ((e.clientY - rect.top) / rect.height) * height;
+
+    // Check which image was clicked (reverse order to match drawing order - top to bottom)
+    const imagesArray = [...images].reverse();
+    for (const img of imagesArray) {
+      const bounds = imageBounds.get(img.id);
+      if (!bounds) continue;
+
+      if (
+        mouseX >= bounds.x &&
+        mouseX <= bounds.x + bounds.width &&
+        mouseY >= bounds.y &&
+        mouseY <= bounds.y + bounds.height
+      ) {
+        setDraggingId(img.id);
+        setDragStart({ x: mouseX, y: mouseY });
+        break;
+      }
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!draggingId || !dragStart || !overlayRef.current || !onImagePositionUpdate) return;
+
+    const rect = overlayRef.current.getBoundingClientRect();
+    const mouseX = ((e.clientX - rect.left) / rect.width) * width;
+    const mouseY = ((e.clientY - rect.top) / rect.height) * height;
+
+    const deltaX = mouseX - dragStart.x;
+    const deltaY = mouseY - dragStart.y;
+
+    const img = images.find((i) => i.id === draggingId);
+    if (!img) return;
+
+    const bounds = imageBounds.get(draggingId);
+    if (!bounds) return;
+
+    // Calculate new center position (normalized 0-1)
+    const newCenterX = (bounds.x + bounds.width / 2 + deltaX) / width;
+    const newCenterY = (bounds.y + bounds.height / 2 + deltaY) / height;
+
+    onImagePositionUpdate(draggingId, {
+      x: Math.max(0, Math.min(1, newCenterX)),
+      y: Math.max(0, Math.min(1, newCenterY)),
+    });
+
+    setDragStart({ x: mouseX, y: mouseY });
+  };
+
+  const handleMouseUp = () => {
+    setDraggingId(null);
+    setDragStart(null);
+  };
+
   return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        zIndex: 50,
-        mixBlendMode: blendMode as any,
-      }}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+          zIndex: 50,
+          mixBlendMode: blendMode === 'source-over' ? 'normal' : (blendMode as any),
+        }}
+      />
+      {/* Interactive overlay for dragging */}
+      {onImagePositionUpdate && images.length > 0 && (
+        <div
+          ref={overlayRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            zIndex: 51,
+            cursor: draggingId ? 'grabbing' : 'grab',
+          }}
+        />
+      )}
+    </>
   );
 };

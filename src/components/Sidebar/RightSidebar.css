@@ -9,6 +9,24 @@
   z-index: var(--z-index-sidebar);
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 200%;
+  }
+}
+
 /* Sidebar Section */
 .sidebar-section {
   padding: var(--space-6);
@@ -671,4 +689,20 @@ details:not([open]) .panel-header svg {
 .layer-control-btn.danger:hover {
   background-color: rgba(255, 59, 48, 0.1);
   color: #ff3b30;
+}
+
+/* Light Theme Overrides */
+[data-theme="light"] .upload-button {
+  background-color: #163300;  /* Dark forest green */
+  color: #ffffff;             /* White text for better contrast */
+}
+
+[data-theme="light"] .export-button {
+  background-color: #163300;  /* Dark forest green */
+  color: #ffffff;             /* White text for better contrast */
+}
+
+[data-theme="light"] .upload-button:hover,
+[data-theme="light"] .export-button:hover {
+  background-color: #234d00;  /* Slightly lighter forest green on hover */
 }

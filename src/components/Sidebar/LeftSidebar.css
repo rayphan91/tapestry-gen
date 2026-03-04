@@ -79,6 +79,31 @@
   color: var(--color-text-primary);
 }
 
+.sidebar-theme-toggle {
+  background: var(--color-surface-secondary);
+  border: none;
+  padding: var(--space-2);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+}
+
+.sidebar-theme-toggle:hover {
+  background: var(--color-border-light);
+  transform: scale(1.05);
+}
+
+.sidebar-theme-toggle:active {
+  transform: scale(0.95);
+}
+
 .sidebar-section {
   padding: var(--space-6);
   border-bottom: 1px solid var(--color-border-light);
@@ -138,24 +163,28 @@
 .custom-dropdown {
   position: relative;
   width: 100%;
+  max-width: 200px;
+  flex: 1;
 }
 
 .custom-dropdown-button {
   width: 100%;
-  padding: 2px var(--space-2);
+  padding: 5px 6px;
   background-color: var(--color-surface-secondary);
   color: var(--color-text-primary);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
   font-family: var(--font-body);
-  font-size: 9px;
+  font-size: 10px !important;
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
   transition: all var(--transition-fast);
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
-  justify-content: space-between;
-  min-height: 20px;
+  gap: 6px;
+  min-height: 26px;
+  overflow: hidden;
 }
 
 .custom-dropdown-button:hover {
@@ -165,7 +194,18 @@
 .custom-dropdown-selected {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  font-size: 10px !important;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.custom-dropdown-selected span {
+  white-space: nowrap;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
 }
 
 .custom-dropdown-colors {
@@ -183,6 +223,7 @@
 .custom-dropdown-arrow {
   font-size: 8px;
   color: var(--color-text-secondary);
+  flex-shrink: 0;
 }
 
 .custom-dropdown-menu {
@@ -201,19 +242,21 @@
 
 .custom-dropdown-option {
   width: 100%;
-  padding: 3px var(--space-2);
+  padding: 5px var(--space-2);
   background-color: transparent;
   color: var(--color-text-primary);
   border: none;
   font-family: var(--font-body);
-  font-size: 9px;
+  font-size: 10px !important;
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
   transition: all var(--transition-fast);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   text-align: left;
+  min-height: 26px;
+  text-transform: uppercase;
 }
 
 .custom-dropdown-option:hover {
