@@ -80,12 +80,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenAI API Error:', errorText);
+      console.error('Status:', response.status);
+      console.error('Prompt used:', prompt);
 
       // Parse error for better user feedback
       let errorMessage = 'Failed to generate image';
       try {
         const error = JSON.parse(errorText);
         errorMessage = error.error?.message || errorMessage;
+        console.error('Parsed error:', error);
       } catch {
         errorMessage = errorText || errorMessage;
       }
