@@ -79,6 +79,7 @@ export const HelpOverlay: React.FC<HelpOverlayProps> = ({ isActive, onClose }) =
             <p>Generate AI images from countries around the world.</p>
             <p><strong>Manual:</strong> Choose random or select specific countries.</p>
             <p><strong>Auto:</strong> Uses random countries for simplicity.</p>
+            <p><strong>Tip:</strong> Click and drag images on the canvas to reposition them manually!</p>
           </div>
         </div>
 
@@ -95,8 +96,9 @@ export const HelpOverlay: React.FC<HelpOverlayProps> = ({ isActive, onClose }) =
         <div className="help-tooltip help-tooltip-upload">
           <div className="help-tooltip-content">
             <h4>Add Your Own Images</h4>
-            <p>Upload your own images to be scattered procedurally in the collage system, just like AI-generated images.</p>
-            <p>Available in Manual mode only. Drag & drop also works!</p>
+            <p>Upload your own images to be scattered procedurally in the collage system.</p>
+            <p>Available in Manual mode only. Drag & drop onto canvas also works!</p>
+            <p><strong>Tip:</strong> Once placed, drag images around to customize positions.</p>
           </div>
         </div>
 
