@@ -32,6 +32,9 @@
   --color-active: rgba(159, 232, 112, 0.12);
   --color-disabled: rgba(159, 232, 112, 0.3);
 
+  /* Logo filter for dark mode (invert colors) */
+  --logo-filter: invert(1) brightness(1.2);
+
   /* ========== Typography ========== */
 
   /* Font Families */
@@ -120,6 +123,9 @@
   --color-border-light: #ecefeb;      /* Light Gray/Off-White */
   --color-border-dark: #0e0f0c;       /* Black */
   --color-surface-secondary: #eff1ed; /* Very Light Green */
+
+  /* Logo filter for light mode (no filter) */
+  --logo-filter: none;
 
   /* Content Colors */
   --color-text-primary: #0e0f0c;      /* Black */
