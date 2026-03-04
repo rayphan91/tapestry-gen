@@ -38,6 +38,7 @@
   font-family: var(--font-display);
   font-weight: var(--font-weight-bold);
   color: var(--color-primary);
+  white-space: nowrap;
 }
 
 .topbar-logo-text {
@@ -48,6 +49,7 @@
   font-size: var(--font-size-lg);
   color: var(--color-text-secondary);
   font-weight: var(--font-weight-normal);
+  margin: 0 var(--space-1);
 }
 
 .topbar-logo-subtitle {
