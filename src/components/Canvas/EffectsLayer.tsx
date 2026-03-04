@@ -277,9 +277,9 @@ export const EffectsLayer: React.FC<EffectsLayerProps> = ({
             pointerEvents: 'none',
             zIndex: 3000,
             opacity: scanlinesOpacity,
-            background: `repeating-linear-gradient(
+            backgroundImage: `repeating-linear-gradient(
               0deg,
-              rgba(0, 0, 0, ${scanlinesIntensity}),
+              rgba(0, 0, 0, ${scanlinesIntensity}) 0px,
               rgba(0, 0, 0, ${scanlinesIntensity}) ${scanlinesThickness}px,
               transparent ${scanlinesThickness}px,
               transparent ${scanlinesSpacing}px

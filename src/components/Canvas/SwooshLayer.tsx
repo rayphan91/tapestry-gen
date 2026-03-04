@@ -47,6 +47,9 @@ export const SwooshLayer: React.FC<SwooshLayerProps> = ({ width, height }) => {
 
   // Handle mouse down for point selection/dragging
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>, swooshId: string) => {
+    // Only allow interaction in draw mode
+    if (!drawMode) return;
+
     const ref = canvasRefs.current.get(swooshId);
     if (!ref) return;
 
@@ -117,7 +120,8 @@ export const SwooshLayer: React.FC<SwooshLayerProps> = ({ width, height }) => {
 
   // Handle mouse move for dragging
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>, swooshId: string) => {
-    if (!isDragging || !selectedSwooshId) return;
+    // Only allow interaction in draw mode
+    if (!drawMode || !isDragging || !selectedSwooshId) return;
 
     const ref = canvasRefs.current.get(swooshId);
     if (!ref) return;
@@ -285,7 +289,8 @@ export const SwooshLayer: React.FC<SwooshLayerProps> = ({ width, height }) => {
                     offsetY: (swoosh.offsetY || 0) + animOffsetY,
                   };
                   renderer.renderSwoosh(swooshWithAnimations);
-                  if (isSelected) {
+                  // Only render control points if in draw mode AND this specific swoosh is selected
+                  if (drawMode && isSelected && swoosh.id === selectedSwooshId) {
                     renderer.renderControlPoints(swoosh, selectedPointIndex);
                   }
                 }
@@ -303,7 +308,8 @@ export const SwooshLayer: React.FC<SwooshLayerProps> = ({ width, height }) => {
                       offsetY: (swoosh.offsetY || 0) + animOffsetY,
                     };
                     ref.renderer.renderSwoosh(swooshWithAnimations);
-                    if (isSelected) {
+                    // Only render control points if in draw mode AND this specific swoosh is selected
+                    if (drawMode && isSelected && swoosh.id === selectedSwooshId) {
                       ref.renderer.renderControlPoints(swoosh, selectedPointIndex);
                     }
                   }
@@ -317,8 +323,8 @@ export const SwooshLayer: React.FC<SwooshLayerProps> = ({ width, height }) => {
               left: 0,
               width: '100%',
               height: '100%',
-              pointerEvents: 'auto',
-              cursor: isDragging && isSelected ? 'grabbing' : 'pointer',
+              pointerEvents: drawMode ? 'auto' : 'none', // Only interactive in draw mode
+              cursor: isDragging && isSelected ? 'grabbing' : (drawMode ? 'pointer' : 'default'),
               zIndex: isSelected ? 100 : 10 + index,
               display: isVisible ? 'block' : 'none',
               mixBlendMode: (swoosh.blendMode || 'normal') as any,

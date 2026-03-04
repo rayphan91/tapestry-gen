@@ -64,6 +64,7 @@ interface TapestryState {
   brushStrokesIntensity: number; // 0-1
   brushStrokesOpacity: number; // 0-1
   brushStrokesScale: number; // 0-1
+  brushStrokesGrain: number; // 0-1
   brushStrokesBlendMode: string;
   brushStrokesColor: string;
   brushStrokesColor2: string;
@@ -108,6 +109,7 @@ interface TapestryState {
   leftSidebarCollapsed: boolean;
   rightSidebarCollapsed: boolean;
   theme: 'dark' | 'light';
+  controlMode: 'auto' | 'manual';
 
   // Canvas Actions
   setCanvasMode: (mode: CanvasMode) => void;
@@ -162,10 +164,12 @@ interface TapestryState {
   setSplatterColor3: (color: string) => void;
   setSplatterSeed: (seed: number) => void;
   randomizeSplatterSeed: () => void;
+  randomizeAllEffects: () => void;
   setSwooshOpacity: (opacity: number) => void;
   setBrushStrokesIntensity: (intensity: number) => void;
   setBrushStrokesOpacity: (opacity: number) => void;
   setBrushStrokesScale: (scale: number) => void;
+  setBrushStrokesGrain: (grain: number) => void;
   setBrushStrokesBlendMode: (mode: string) => void;
   setBrushStrokesColor: (color: string) => void;
   setBrushStrokesColor2: (color: string) => void;
@@ -198,6 +202,7 @@ interface TapestryState {
   toggleLeftSidebar: () => void;
   toggleRightSidebar: () => void;
   toggleTheme: () => void;
+  setControlMode: (mode: 'auto' | 'manual') => void;
 
   // Export
   exportCanvas: (options: ExportOptions) => Promise<Blob>;
@@ -278,6 +283,7 @@ export const useTapestryStore = create<TapestryState>()(
       brushStrokesIntensity: 0.3,
       brushStrokesOpacity: 1.0,
       brushStrokesScale: 0.5,
+      brushStrokesGrain: 0.5,
       brushStrokesBlendMode: 'multiply',
       brushStrokesColor: '#512425',
       brushStrokesColor2: '#1a1a1a',
@@ -305,6 +311,7 @@ export const useTapestryStore = create<TapestryState>()(
       leftSidebarCollapsed: false,
       rightSidebarCollapsed: false,
       theme: 'dark',
+      controlMode: 'manual',
 
       // Canvas Actions
       setCanvasMode: (mode) =>
@@ -588,6 +595,11 @@ export const useTapestryStore = create<TapestryState>()(
           brushStrokesScale: Math.max(0, Math.min(1, scale)),
         })),
 
+      setBrushStrokesGrain: (grain) =>
+        set(() => ({
+          brushStrokesGrain: Math.max(0, Math.min(1, grain)),
+        })),
+
       setBrushStrokesBlendMode: (mode) =>
         set(() => ({
           brushStrokesBlendMode: mode,
@@ -616,6 +628,17 @@ export const useTapestryStore = create<TapestryState>()(
       randomizeBrushStrokesSeed: () =>
         set(() => ({
           brushStrokesSeed: Math.random(),
+        })),
+
+      randomizeAllEffects: () =>
+        set((state) => ({
+          veinsSeed: Math.random(),
+          splatterSeed: Math.random(),
+          brushStrokesSeed: Math.random(),
+          splatterLayers: state.splatterLayers.map((layer) => ({
+            ...layer,
+            seed: Math.random(),
+          })),
         })),
 
       addSplatterLayer: () =>
@@ -748,6 +771,11 @@ export const useTapestryStore = create<TapestryState>()(
       toggleTheme: () =>
         set((state) => ({
           theme: state.theme === 'dark' ? 'light' : 'dark',
+        })),
+
+      setControlMode: (mode) =>
+        set(() => ({
+          controlMode: mode,
         })),
 
       // Export

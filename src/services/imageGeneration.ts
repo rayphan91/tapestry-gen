@@ -60,11 +60,20 @@ export async function generateImagesWithDALLE(
   const themeModifier = THEME_MODIFIERS[theme];
   const regionContext = REGION_PROMPTS[region] || REGION_PROMPTS.custom;
 
+  // Randomly add special effects (30% chance for holographic, 30% for money texture, 40% none)
+  const effectRoll = Math.random();
+  let specialEffect = '';
+  if (effectRoll < 0.3) {
+    specialEffect = ', with subtle holographic iridescent overlay';
+  } else if (effectRoll < 0.6) {
+    specialEffect = ', with delicate money texture pattern overlay';
+  }
+
   let prompt = '';
   if (country) {
-    prompt = `Professional photograph of ${themeModifier} in ${country}, photorealistic, natural lighting, sharp focus, high resolution`;
+    prompt = `Professional photograph of ${themeModifier} in ${country}, photorealistic, natural lighting, sharp focus, high resolution${specialEffect}`;
   } else {
-    prompt = `Professional photograph of ${themeModifier} from ${regionContext}, photorealistic, natural lighting, sharp focus, high resolution`;
+    prompt = `Professional photograph of ${themeModifier} from ${regionContext}, photorealistic, natural lighting, sharp focus, high resolution${specialEffect}`;
   }
 
   const results: GeneratedImage[] = [];

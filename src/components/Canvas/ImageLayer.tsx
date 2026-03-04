@@ -220,7 +220,7 @@ export const ImageLayer: React.FC<ImageLayerProps> = () => {
                 width: transform.dimensions.width,
                 height: transform.dimensions.height,
                 cursor: layer.locked ? 'not-allowed' : 'move',
-                zIndex: layer.order || index,
+                zIndex: 120 + (layer.order || index), // Above swooshes (10-100) and veins (100), below splatter (150+)
                 pointerEvents: layer.locked ? 'none' : 'auto',
                 mixBlendMode: appearance.blendMode,
               }}

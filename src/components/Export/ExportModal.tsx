@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { Download, X, Video } from 'lucide-react';
+import { Download, X, Video, CheckCircle2, Circle, AlertTriangle, XCircle } from 'lucide-react';
+import { useTapestryStore } from '@/store/useTapestryStore';
+import { useSwooshStore } from '@/store/useSwooshStore';
+import { validateTapestryExport } from '@/utils/exportValidation';
 import './ExportModal.css';
 
 interface ExportModalProps {
@@ -28,6 +31,30 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [fps, setFps] = useState(30);
   const [videoDuration, setVideoDuration] = useState(8);
 
+  // Get store state for validation
+  const selectedRegion = useTapestryStore((state) => state.selectedRegion);
+  const layers = useTapestryStore((state) => state.layers);
+  const collageImages = useTapestryStore((state) => state.collageImages);
+  const showFilmGrain = useTapestryStore((state) => state.showFilmGrain);
+  const showScanlines = useTapestryStore((state) => state.showScanlines);
+  const showVeins = useTapestryStore((state) => state.showVeins);
+  const showSplatter = useTapestryStore((state) => state.showSplatter);
+  const showBrushStrokes = useTapestryStore((state) => state.showBrushStrokes);
+  const swooshes = useSwooshStore((state) => state.swooshes);
+
+  // Validate tapestry
+  const validation = validateTapestryExport({
+    selectedRegion,
+    layers,
+    collageImages,
+    swooshes,
+    showFilmGrain,
+    showScanlines,
+    showVeins,
+    showSplatter,
+    showBrushStrokes,
+  });
+
   if (!isOpen) return null;
 
   const exportWidth = Math.round(currentWidth * scale);
@@ -54,6 +81,88 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         </div>
 
         <div className="export-modal-content">
+          {/* Validation Checklist */}
+          <div className="export-validation-section">
+            <h4 className="export-section-title">Tapestry Ingredients</h4>
+            <div className="export-checklist">
+              <div className={`checklist-item ${validation.checklist.hasGradient ? 'complete' : 'incomplete'}`}>
+                {validation.checklist.hasGradient ? (
+                  <CheckCircle2 size={16} className="checklist-icon complete" />
+                ) : (
+                  <Circle size={16} className="checklist-icon incomplete" />
+                )}
+                <span>Base Gradient</span>
+              </div>
+              <div className={`checklist-item ${validation.checklist.hasVisibleLayers ? 'complete' : 'incomplete'}`}>
+                {validation.checklist.hasVisibleLayers ? (
+                  <CheckCircle2 size={16} className="checklist-icon complete" />
+                ) : (
+                  <Circle size={16} className="checklist-icon incomplete" />
+                )}
+                <span>Image Layers ({layers.filter(l => l.visible).length})</span>
+              </div>
+              <div className={`checklist-item ${validation.checklist.hasCollageImages ? 'complete' : 'incomplete'}`}>
+                {validation.checklist.hasCollageImages ? (
+                  <CheckCircle2 size={16} className="checklist-icon complete" />
+                ) : (
+                  <Circle size={16} className="checklist-icon incomplete" />
+                )}
+                <span>Collage Images ({collageImages.length})</span>
+              </div>
+              <div className={`checklist-item ${validation.checklist.hasSwooshes ? 'complete' : 'incomplete'}`}>
+                {validation.checklist.hasSwooshes ? (
+                  <CheckCircle2 size={16} className="checklist-icon complete" />
+                ) : (
+                  <Circle size={16} className="checklist-icon incomplete" />
+                )}
+                <span>Swooshes ({swooshes.length})</span>
+              </div>
+              <div className={`checklist-item ${validation.checklist.hasEffects ? 'complete' : 'incomplete'}`}>
+                {validation.checklist.hasEffects ? (
+                  <CheckCircle2 size={16} className="checklist-icon complete" />
+                ) : (
+                  <Circle size={16} className="checklist-icon incomplete" />
+                )}
+                <span>Effects (grain, scanlines, etc.)</span>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="export-progress-container">
+              <div className="export-progress-bar">
+                <div
+                  className="export-progress-fill"
+                  style={{ width: `${validation.completionPercentage}%` }}
+                />
+              </div>
+              <span className="export-progress-text">{validation.completionPercentage}% Complete</span>
+            </div>
+
+            {/* Warnings */}
+            {validation.warnings.length > 0 && (
+              <div className="export-warnings">
+                {validation.warnings.map((warning, index) => (
+                  <div key={index} className="export-warning">
+                    <AlertTriangle size={14} />
+                    <span>{warning}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Errors */}
+            {validation.issues.length > 0 && (
+              <div className="export-errors">
+                {validation.issues.map((issue, index) => (
+                  <div key={index} className="export-error">
+                    <XCircle size={14} />
+                    <span>{issue}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Export Type Toggle (Image / Video) */}
           {isAnimating && onExportVideo && (
             <div className="export-option-group">
@@ -249,9 +358,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           <button className="export-cancel-button" onClick={onClose}>
             Cancel
           </button>
-          <button className="export-download-button" onClick={handleExport}>
+          <button
+            className="export-download-button"
+            onClick={handleExport}
+            disabled={!validation.isValid}
+            title={!validation.isValid ? 'Missing required elements' : ''}
+          >
             {exportType === 'video' ? <Video size={16} /> : <Download size={16} />}
-            Export {exportType === 'video' ? 'Video' : format.toUpperCase()}
+            {validation.isValid
+              ? `Export ${exportType === 'video' ? 'Video' : format.toUpperCase()}`
+              : 'Missing Required Elements'}
           </button>
         </div>
       </div>

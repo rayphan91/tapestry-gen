@@ -1,17 +1,33 @@
 import React from 'react';
 import { useTapestryStore } from '@/store/useTapestryStore';
 import { Play, Pause, ChevronDown, Sun, Moon } from 'lucide-react';
+import { ControlModeToggle } from './ControlModeToggle';
 import './CanvasToolbar.css';
 
 export const CanvasToolbar: React.FC = () => {
   const zoom = useTapestryStore((state) => state.canvas.viewport.zoom);
   const setZoom = useTapestryStore((state) => state.setZoom);
   const canvasSize = useTapestryStore((state) => state.canvas.size);
+  const setCanvasSize = useTapestryStore((state) => state.setCanvasSize);
   const isAnimating = useTapestryStore((state) => state.isAnimating);
   const toggleAnimation = useTapestryStore((state) => state.toggleAnimation);
   const theme = useTapestryStore((state) => state.theme);
   const toggleTheme = useTapestryStore((state) => state.toggleTheme);
   const [showZoomMenu, setShowZoomMenu] = React.useState(false);
+
+  const handleWidthChange = (value: string) => {
+    const width = parseInt(value);
+    if (!isNaN(width) && width > 0 && width <= 10000) {
+      setCanvasSize(width, canvasSize.height);
+    }
+  };
+
+  const handleHeightChange = (value: string) => {
+    const height = parseInt(value);
+    if (!isNaN(height) && height > 0 && height <= 10000) {
+      setCanvasSize(canvasSize.width, height);
+    }
+  };
 
   const handleFitToCanvas = () => {
     // Calculate zoom to fit canvas in viewport
@@ -72,6 +88,42 @@ export const CanvasToolbar: React.FC = () => {
           </>
         )}
       </div>
+
+      {/* Canvas Dimensions */}
+      <div className="toolbar-dimensions">
+        <input
+          type="number"
+          min="1"
+          max="10000"
+          value={canvasSize.width}
+          onChange={(e) => handleWidthChange(e.target.value)}
+          onBlur={(e) => {
+            if (!e.target.value || parseInt(e.target.value) <= 0) {
+              setCanvasSize(800, canvasSize.height);
+            }
+          }}
+          className="toolbar-dimension-input"
+          placeholder="W"
+        />
+        <span className="toolbar-dimension-separator">×</span>
+        <input
+          type="number"
+          min="1"
+          max="10000"
+          value={canvasSize.height}
+          onChange={(e) => handleHeightChange(e.target.value)}
+          onBlur={(e) => {
+            if (!e.target.value || parseInt(e.target.value) <= 0) {
+              setCanvasSize(canvasSize.width, 600);
+            }
+          }}
+          className="toolbar-dimension-input"
+          placeholder="H"
+        />
+      </div>
+
+      {/* Control Mode Toggle */}
+      <ControlModeToggle />
 
       {/* Play/Pause Button */}
       <button

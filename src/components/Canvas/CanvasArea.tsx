@@ -64,6 +64,8 @@ export const CanvasArea: React.FC = () => {
   const collageBlendMode = useTapestryStore((state) => state.collageBlendMode);
   const updateCollageImagePosition = useTapestryStore((state) => state.updateCollageImagePosition);
   const addCollageImage = useTapestryStore((state) => state.addCollageImage);
+  const addLayer = useTapestryStore((state) => state.addLayer);
+  const layers = useTapestryStore((state) => state.layers);
   const isAnimating = useTapestryStore((state) => state.isAnimating);
   const animationDuration = useTapestryStore((state) => state.animationDuration);
   const currentAnimationTime = useTapestryStore((state) => state.currentAnimationTime);
@@ -247,12 +249,13 @@ export const CanvasArea: React.FC = () => {
     imageFiles.forEach(file => {
       const reader = new FileReader();
       reader.onload = (event) => {
-        const url = event.target?.result as string;
+        const imageUrl = event.target?.result as string;
         const img = new Image();
         img.onload = () => {
-          addCollageImage(file.name, url, img);
+          // Add to procedural collage system
+          addCollageImage(file.name, imageUrl, img);
         };
-        img.src = url;
+        img.src = imageUrl;
       };
       reader.readAsDataURL(file);
     });

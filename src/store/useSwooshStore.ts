@@ -167,6 +167,8 @@ export const useSwooshStore = create<SwooshState>()(
           // Cancel any active drawing when toggling mode
           isDrawing: false,
           currentDrawingSwoosh: null,
+          // Keep selection but clear selected point when exiting draw mode
+          selectedPointIndex: state.drawMode ? null : state.selectedPointIndex,
         })),
     }),
     { name: 'SwooshStore' }

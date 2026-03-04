@@ -6,74 +6,12 @@ import { Moon, Sun, Eye, EyeOff, Lock, Unlock, Trash2, GripVertical, Shuffle, Sp
 import { generateRandomSwoosh } from '@/utils/swooshGenerator';
 import { generateImagesWithDALLE, getCountryNameFromFlag, type MasterPromptTheme } from '@/services/imageGeneration';
 import { ExportModal } from '../Export/ExportModal';
+import { Flag } from '../common/Flag';
 import './RightSidebar.css';
 
 interface RightSidebarProps {
   collapsed: boolean;
 }
-
-// Country to flag emoji mapping
-const COUNTRY_FLAGS: Record<string, string> = {
-  'Australia': '🇦🇺',
-  'New Zealand': '🇳🇿',
-  'India': '🇮🇳',
-  'Pakistan': '🇵🇰',
-  'Bangladesh': '🇧🇩',
-  'Sri Lanka': '🇱🇰',
-  'Nepal': '🇳🇵',
-  'Fiji': '🇫🇯',
-  'Papua New Guinea': '🇵🇬',
-  'United States': '🇺🇸',
-  'Canada': '🇨🇦',
-  'Japan': '🇯🇵',
-  'South Korea': '🇰🇷',
-  'China': '🇨🇳',
-  'Taiwan': '🇹🇼',
-  'Hong Kong': '🇭🇰',
-  'Mongolia': '🇲🇳',
-  'United Kingdom': '🇬🇧',
-  'France': '🇫🇷',
-  'Germany': '🇩🇪',
-  'Thailand': '🇹🇭',
-  'Vietnam': '🇻🇳',
-  'Singapore': '🇸🇬',
-  'Malaysia': '🇲🇾',
-  'Philippines': '🇵🇭',
-  'Indonesia': '🇮🇩',
-  'Sweden': '🇸🇪',
-  'Norway': '🇳🇴',
-  'Finland': '🇫🇮',
-  'Denmark': '🇩🇰',
-  'Nigeria': '🇳🇬',
-  'Ghana': '🇬🇭',
-  'Senegal': '🇸🇳',
-  'Ivory Coast': '🇨🇮',
-  'Mali': '🇲🇱',
-  'Mexico': '🇲🇽',
-  'Brazil': '🇧🇷',
-  'Argentina': '🇦🇷',
-  'Chile': '🇨🇱',
-  'Colombia': '🇨🇴',
-  'Peru': '🇵🇪',
-  'Venezuela': '🇻🇪',
-  'Egypt': '🇪🇬',
-  'Morocco': '🇲🇦',
-  'Tunisia': '🇹🇳',
-  'Algeria': '🇩🇿',
-  'Spain': '🇪🇸',
-  'Italy': '🇮🇹',
-  'Portugal': '🇵🇹',
-  'Greece': '🇬🇷',
-  'Netherlands': '🇳🇱',
-  'Belgium': '🇧🇪',
-  'Switzerland': '🇨🇭',
-  'Austria': '🇦🇹',
-  'United Arab Emirates': '🇦🇪',
-  'Saudi Arabia': '🇸🇦',
-  'Qatar': '🇶🇦',
-  'Israel': '🇮🇱',
-  'Jordan': '🇯🇴',
-};
 
 export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
   const selectedRegion = useTapestryStore((state) => state.selectedRegion);
@@ -119,6 +57,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
   const randomizeCollageSeed = useTapestryStore((state) => state.randomizeCollageSeed);
   const setCollageParam = useTapestryStore((state) => state.setCollageParam);
   const setCollageBlendMode = useTapestryStore((state) => state.setCollageBlendMode);
+  const controlMode = useTapestryStore((state) => state.controlMode);
 
   const selectedLayer = layers.find(l => l.id === selectedLayerId) as any;
 
@@ -128,8 +67,9 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
   const [generateTheme, setGenerateTheme] = React.useState<MasterPromptTheme>('mixed');
   const [selectedCountries, setSelectedCountries] = React.useState<string[]>([]);
   const [showCountryDropdown, setShowCountryDropdown] = React.useState(false);
-  // Hardcoded API key - replace with your actual OpenAI API key
-  const apiKey = 'YOUR_API_KEY_HERE';
+  // API key - users need to provide their own OpenAI API key
+  // You can set this via environment variable or user input
+  const [apiKey, setApiKey] = React.useState('');
   const [generationProgress, setGenerationProgress] = React.useState(0);
   const [generationTotal, setGenerationTotal] = React.useState(0);
   const [showExportModal, setShowExportModal] = React.useState(false);
@@ -192,39 +132,8 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
         const img = new Image();
 
         img.onload = () => {
-          // Create an ImageLayer
-          const imageLayer: any = {
-            id: `image-${Date.now()}-${Math.random()}`,
-            name: file.name,
-            type: 'image',
-            visible: true,
-            locked: false,
-            order: layers.length,
-            imageUrl,
-            originalWidth: img.width,
-            originalHeight: img.height,
-            fileName: file.name,
-            transform: {
-              position: { x: canvasSize.width / 2, y: canvasSize.height / 2 },
-              dimensions: { width: img.width, height: img.height },
-              rotation: 0,
-              scaleX: 1,
-              scaleY: 1,
-              flipX: false,
-              flipY: false,
-            },
-            appearance: {
-              blendMode: 'normal' as const,
-              opacity: 100,
-              feather: 0,
-              hue: 0,
-              saturation: 0,
-              brightness: 0,
-              contrast: 0,
-            },
-          };
-
-          addLayer(imageLayer);
+          // Add to procedural collage system instead of as a layer
+          addCollageImage(file.name, imageUrl, img);
         };
 
         img.src = imageUrl;
@@ -390,11 +299,24 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
   };
 
   const handleExport = async (format: 'png' | 'jpg' | 'webp', quality: number, scale: number) => {
+    // Temporarily deselect all swooshes to hide control points during export
+    const swooshStore = (await import('@/store/useSwooshStore')).useSwooshStore;
+    const previousSelectedSwooshId = swooshStore.getState().selectedSwooshId;
+
     try {
+      swooshStore.getState().selectSwoosh(null);
+
+      // Wait for render to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // Find the canvas-wrapper div which contains all layers
       const canvasWrapper = document.querySelector('.canvas-wrapper') as HTMLElement;
       if (!canvasWrapper) {
         console.error('Canvas wrapper not found');
+        // Restore selection
+        if (previousSelectedSwooshId) {
+          swooshStore.getState().selectSwoosh(previousSelectedSwooshId);
+        }
         return;
       }
 
@@ -402,15 +324,21 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
       const exportCanvas = document.createElement('canvas');
       exportCanvas.width = canvasSize.width * scale;
       exportCanvas.height = canvasSize.height * scale;
-      const ctx = exportCanvas.getContext('2d', { willReadFrequently: true });
+      const ctx = exportCanvas.getContext('2d', {
+        willReadFrequently: true,
+        alpha: true,
+        colorSpace: 'srgb',
+      });
       if (!ctx) return;
 
       // Scale the context
       ctx.scale(scale, scale);
 
-      // Fill with white background
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
+      // Only fill with white if no gradient is selected
+      if (!selectedRegion || selectedRegion === '') {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
+      }
 
       // Helper function to convert SVG data URL to image
       const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -422,9 +350,39 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
         });
       };
 
-      // Helper function to render a div with background-image to canvas
+      // Helper function to render a div with background-image or background to canvas
       const renderBackgroundImage = async (element: HTMLElement) => {
         const bgImage = element.style.backgroundImage;
+        const background = element.style.background;
+
+        // Check if it's a background with gradient (like scanlines)
+        if (background && background.includes('gradient')) {
+          const opacity = parseFloat(element.style.opacity || '1');
+          const blendMode = element.style.mixBlendMode;
+
+          ctx.save();
+          ctx.globalAlpha = opacity;
+          if (blendMode && blendMode !== '' && blendMode !== 'normal') {
+            ctx.globalCompositeOperation = blendMode as GlobalCompositeOperation;
+          }
+
+          // Create a temporary canvas to render the gradient
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = canvasSize.width;
+          tempCanvas.height = canvasSize.height;
+          const tempCtx = tempCanvas.getContext('2d');
+          if (tempCtx) {
+            // Fill with the gradient/background
+            tempCtx.fillStyle = background;
+            tempCtx.fillRect(0, 0, canvasSize.width, canvasSize.height);
+            ctx.drawImage(tempCanvas, 0, 0);
+          }
+
+          ctx.restore();
+          return;
+        }
+
+        // Otherwise handle as backgroundImage
         if (!bgImage || bgImage === 'none') return;
 
         // Extract URL from backgroundImage style
@@ -471,11 +429,14 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
         allElements.push({ element: canvas as HTMLCanvasElement, zIndex, type: 'canvas' });
       });
 
-      // Get all divs with backgroundImage (effects)
+      // Get all divs with backgroundImage or background (effects including scanlines)
       const allDivs = canvasWrapper.querySelectorAll('div');
       allDivs.forEach((div) => {
         const htmlDiv = div as HTMLElement;
-        if (!htmlDiv.style.backgroundImage || htmlDiv.style.backgroundImage === 'none') return;
+        const hasBackgroundImage = htmlDiv.style.backgroundImage && htmlDiv.style.backgroundImage !== 'none';
+        const hasBackground = htmlDiv.style.background && htmlDiv.style.background !== 'none';
+
+        if (!hasBackgroundImage && !hasBackground) return;
 
         const zIndex = parseInt(htmlDiv.style.zIndex || '0');
         allElements.push({ element: htmlDiv, zIndex, type: 'div' });
@@ -534,9 +495,18 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
         link.href = url;
         link.click();
         URL.revokeObjectURL(url);
+
+        // Restore swoosh selection after export
+        if (previousSelectedSwooshId) {
+          swooshStore.getState().selectSwoosh(previousSelectedSwooshId);
+        }
       }, mimeType, qualityValue);
     } catch (error) {
       console.error('Export failed:', error);
+      // Restore swoosh selection on error
+      if (previousSelectedSwooshId) {
+        swooshStore.getState().selectSwoosh(previousSelectedSwooshId);
+      }
     }
   };
 
@@ -563,39 +533,61 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
             Generate AI images from countries around the world
           </div>
 
-          {/* Generation Mode Selection */}
+          {/* Generation Mode Selection - Only show in Manual mode */}
           <div className="property-group">
-              <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
-                <button
-                  onClick={() => {
-                    setSelectedCountries([]);
-                    setShowCountryDropdown(false);
-                  }}
-                  className="parameter-button"
-                  style={{
-                    flex: 1,
-                    background: selectedCountries.length === 0 && !showCountryDropdown ? '#163300' : 'var(--color-surface-secondary)',
-                    color: selectedCountries.length === 0 && !showCountryDropdown ? '#ffffff' : 'var(--color-text-primary)',
-                    border: selectedCountries.length === 0 && !showCountryDropdown ? '1px solid #163300' : '1px solid var(--color-border-light)'
-                  }}
-                >
-                  Random
-                </button>
-                <button
-                  onClick={() => {
-                    setShowCountryDropdown(true);
-                  }}
-                  className="parameter-button"
-                  style={{
-                    flex: 1,
-                    background: selectedCountries.length > 0 || showCountryDropdown ? '#163300' : 'var(--color-surface-secondary)',
-                    color: selectedCountries.length > 0 || showCountryDropdown ? '#ffffff' : 'var(--color-text-primary)',
-                    border: selectedCountries.length > 0 || showCountryDropdown ? '1px solid #163300' : '1px solid var(--color-border-light)'
-                  }}
-                >
-                  Select
-                </button>
-              </div>
+              {controlMode === 'manual' ? (
+                <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
+                  <button
+                    onClick={() => {
+                      setSelectedCountries([]);
+                      setShowCountryDropdown(false);
+                    }}
+                    className="parameter-button"
+                    style={{
+                      flex: 1,
+                      background: selectedCountries.length === 0 && !showCountryDropdown ? '#163300' : 'var(--color-surface-secondary)',
+                      color: selectedCountries.length === 0 && !showCountryDropdown ? '#ffffff' : 'var(--color-text-primary)',
+                      border: selectedCountries.length === 0 && !showCountryDropdown ? '1px solid #163300' : '1px solid var(--color-border-light)'
+                    }}
+                  >
+                    Random countries
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowCountryDropdown(true);
+                    }}
+                    className="parameter-button"
+                    style={{
+                      flex: 1,
+                      background: selectedCountries.length > 0 || showCountryDropdown ? '#163300' : 'var(--color-surface-secondary)',
+                      color: selectedCountries.length > 0 || showCountryDropdown ? '#ffffff' : 'var(--color-text-primary)',
+                      border: selectedCountries.length > 0 || showCountryDropdown ? '1px solid #163300' : '1px solid var(--color-border-light)'
+                    }}
+                  >
+                    Select countries
+                  </button>
+                </div>
+              ) : null}
+
+              {/* API Key Input */}
+              <label className="property-label" style={{ marginTop: 'var(--space-2)' }}>OpenAI API Key</label>
+              <input
+                type="password"
+                placeholder="sk-..."
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="property-input"
+                style={{
+                  width: '100%',
+                  padding: 'var(--space-2)',
+                  background: 'var(--color-surface-secondary)',
+                  border: '1px solid var(--color-border-light)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--color-text-primary)',
+                  fontSize: '11px',
+                  fontFamily: 'monospace'
+                }}
+              />
 
               {/* Theme selector - always visible */}
               <label className="property-label" style={{ marginTop: 'var(--space-2)' }}>Theme</label>
@@ -611,8 +603,8 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
                 <option value="culture">Culture</option>
               </select>
 
-              {/* Random Mode - Show count only when not in Select mode */}
-              {selectedCountries.length === 0 && !showCountryDropdown && (
+              {/* Random Mode - Show count when not in Select mode (or always in Auto mode) */}
+              {(controlMode === 'auto' || (selectedCountries.length === 0 && !showCountryDropdown)) && (
                 <>
                   <label className="property-label" style={{ marginTop: 'var(--space-3)' }}>Count</label>
                   <input
@@ -635,8 +627,8 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
                 </>
               )}
 
-              {/* Show countries selector when in Select mode OR dropdown is open */}
-              {(selectedCountries.length > 0 || showCountryDropdown) && (
+              {/* Show countries selector when in Select mode OR dropdown is open (Manual mode only) */}
+              {controlMode === 'manual' && (selectedCountries.length > 0 || showCountryDropdown) && (
                 <div style={{ position: 'relative', marginTop: 'var(--space-3)' }} ref={countryDropdownRef}>
                   <label className="property-label">Countries</label>
                   <button
@@ -698,10 +690,10 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
                                 setSelectedCountries(selectedCountries.filter(c => c !== country));
                               }
                             }}
-                            style={{ cursor: 'pointer' }}
+                            style={{ cursor: 'pointer', flexShrink: 0 }}
                           />
-                          <span>{COUNTRY_FLAGS[country] || ''}</span>
-                          {country}
+                          <Flag country={country} size={20} style={{ flexShrink: 0 }} />
+                          <span>{country}</span>
                         </label>
                       ))}
                     </div>
@@ -814,118 +806,174 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
             {/* Collage Controls - Only show when images exist */}
             {collageImages.length > 0 && (
               <>
-                <div className="property-group" style={{ marginTop: '12px' }}>
-              <label className="property-label">Vignette</label>
-              <div className="parameter-control">
-                <input
-                  type="range"
-                  min="20"
-                  max="90"
-                  value={collageParams.vignette * 100}
-                  onChange={(e) => setCollageParam('vignette', parseFloat(e.target.value) / 100)}
-                  className="parameter-slider"
-                />
-                <span className="parameter-value">{Math.round(collageParams.vignette * 100)}%</span>
-              </div>
-            </div>
+                {controlMode === 'manual' ? (
+                  <>
+                    <div className="property-group" style={{ marginTop: '12px' }}>
+                      <label className="property-label">Vignette</label>
+                      <div className="parameter-control">
+                        <input
+                          type="range"
+                          min="20"
+                          max="90"
+                          value={collageParams.vignette * 100}
+                          onChange={(e) => setCollageParam('vignette', parseFloat(e.target.value) / 100)}
+                          className="parameter-slider"
+                        />
+                        <span className="parameter-value">{Math.round(collageParams.vignette * 100)}%</span>
+                      </div>
+                    </div>
 
-            <div className="property-group">
-              <label className="property-label">Scale Spread</label>
-              <div className="parameter-control">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={collageParams.scaleSpread * 100}
-                  onChange={(e) => setCollageParam('scaleSpread', parseFloat(e.target.value) / 100)}
-                  className="parameter-slider"
-                />
-                <span className="parameter-value">{Math.round(collageParams.scaleSpread * 100)}%</span>
-              </div>
-            </div>
+                    <div className="property-group">
+                      <label className="property-label">Scale Spread</label>
+                      <div className="parameter-control">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={collageParams.scaleSpread * 100}
+                          onChange={(e) => setCollageParam('scaleSpread', parseFloat(e.target.value) / 100)}
+                          className="parameter-slider"
+                        />
+                        <span className="parameter-value">{Math.round(collageParams.scaleSpread * 100)}%</span>
+                      </div>
+                    </div>
 
-            <div className="property-group">
-              <label className="property-label">Rotation</label>
-              <div className="parameter-control">
-                <input
-                  type="range"
-                  min="0"
-                  max="45"
-                  value={collageParams.rotation}
-                  onChange={(e) => setCollageParam('rotation', parseFloat(e.target.value))}
-                  className="parameter-slider"
-                />
-                <span className="parameter-value">{Math.round(collageParams.rotation)}°</span>
-              </div>
-            </div>
+                    <div className="property-group">
+                      <label className="property-label">Rotation</label>
+                      <div className="parameter-control">
+                        <input
+                          type="range"
+                          min="0"
+                          max="45"
+                          value={collageParams.rotation}
+                          onChange={(e) => setCollageParam('rotation', parseFloat(e.target.value))}
+                          className="parameter-slider"
+                        />
+                        <span className="parameter-value">{Math.round(collageParams.rotation)}°</span>
+                      </div>
+                    </div>
 
-            <div className="property-group">
-              <label className="property-label">Grain</label>
-              <div className="parameter-control">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={collageParams.grain * 100}
-                  onChange={(e) => setCollageParam('grain', parseFloat(e.target.value) / 100)}
-                  className="parameter-slider"
-                />
-                <span className="parameter-value">{Math.round(collageParams.grain * 100)}%</span>
-              </div>
-            </div>
+                    <div className="property-group">
+                      <label className="property-label">Grain</label>
+                      <div className="parameter-control">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={collageParams.grain * 100}
+                          onChange={(e) => setCollageParam('grain', parseFloat(e.target.value) / 100)}
+                          className="parameter-slider"
+                        />
+                        <span className="parameter-value">{Math.round(collageParams.grain * 100)}%</span>
+                      </div>
+                    </div>
 
-            <div className="property-group">
-              <label className="property-label">Saturation</label>
-              <div className="parameter-control">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={collageParams.saturation * 100}
-                  onChange={(e) => setCollageParam('saturation', parseFloat(e.target.value) / 100)}
-                  className="parameter-slider"
-                />
-                <span className="parameter-value">{Math.round(collageParams.saturation * 100)}%</span>
-              </div>
-            </div>
+                    <div className="property-group">
+                      <label className="property-label">Saturation</label>
+                      <div className="parameter-control">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={collageParams.saturation * 100}
+                          onChange={(e) => setCollageParam('saturation', parseFloat(e.target.value) / 100)}
+                          className="parameter-slider"
+                        />
+                        <span className="parameter-value">{Math.round(collageParams.saturation * 100)}%</span>
+                      </div>
+                    </div>
 
-            <div className="property-group">
-              <label className="property-label">Seed</label>
-              <div className="parameter-control" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <input
-                  type="range"
-                  min="0"
-                  max="1000000"
-                  value={collageSeed * 1000000}
-                  onChange={(e) => setCollageSeed(parseFloat(e.target.value) / 1000000)}
-                  className="parameter-slider"
-                  style={{ flex: 1 }}
-                />
-                <button
-                  onClick={randomizeCollageSeed}
-                  className="layer-control-btn"
-                  title="Randomize seed"
-                >
-                  <Shuffle size={14} />
-                </button>
-              </div>
-            </div>
+                    <div className="property-group">
+                      <label className="property-label">Seed</label>
+                      <div className="parameter-control" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1000000"
+                          value={collageSeed * 1000000}
+                          onChange={(e) => setCollageSeed(parseFloat(e.target.value) / 1000000)}
+                          className="parameter-slider"
+                          style={{ flex: 1 }}
+                        />
+                        <button
+                          onClick={randomizeCollageSeed}
+                          className="layer-control-btn"
+                          title="Randomize seed"
+                        >
+                          <Shuffle size={14} />
+                        </button>
+                      </div>
+                    </div>
 
-                <div className="property-group">
-                  <label className="property-label">Blend Mode</label>
-                  <select
-                    className="property-select"
-                    value={collageBlendMode}
-                    onChange={(e) => setCollageBlendMode(e.target.value)}
-                  >
-                    <option value="source-over">Normal</option>
-                    <option value="soft-light">Soft Light</option>
-                  </select>
-                </div>
+                    <div className="property-group">
+                      <label className="property-label">Blend Mode</label>
+                      <select
+                        className="property-select"
+                        value={collageBlendMode}
+                        onChange={(e) => setCollageBlendMode(e.target.value)}
+                      >
+                        <option value="source-over">Normal</option>
+                        <option value="soft-light">Soft Light</option>
+                      </select>
+                    </div>
+                  </>
+                ) : (
+                  <div className="property-group" style={{ marginTop: '12px' }}>
+                    <button
+                      onClick={randomizeCollageSeed}
+                      className="randomize-button"
+                      title="Randomize all collage parameters"
+                    >
+                      <Shuffle size={16} />
+                      <span>Randomize Collage</span>
+                    </button>
+                  </div>
+                )}
               </>
             )}
         </div>
       </div>
+
+      {/* Image Upload Section - Only show in Manual mode */}
+      {controlMode === 'manual' && (
+        <div className="sidebar-section" style={{ borderBottom: '1px solid var(--color-border-light)' }}>
+          <div className="section-header">
+            <h3 className="section-title">ADD YOUR OWN IMAGES</h3>
+          </div>
+          <div style={{ marginTop: 'var(--space-4)' }}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+            />
+            <button
+              onClick={handleUploadClick}
+              className="parameter-button"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 'var(--space-2)',
+                width: '100%'
+              }}
+            >
+              Upload to Collage
+            </button>
+            <div style={{
+              fontSize: '10px',
+              color: 'var(--color-text-tertiary)',
+              marginTop: 'var(--space-2)',
+              textAlign: 'center',
+              lineHeight: 1.4
+            }}>
+              Images will be scattered procedurally
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Position - Only show when image layer is selected */}
       {selectedLayer && selectedLayer.type === 'image' && (
@@ -934,90 +982,116 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
             <h3 className="section-title">POSITION</h3>
           </div>
           <div style={{ marginTop: 'var(--space-4)' }}>
-              <div className="property-group">
-                <label className="property-label">Position</label>
-                <div className="property-row">
-                  <div className="property-input-wrapper">
-                    <span className="input-label">X</span>
-                    <input
-                      type="number"
-                      value={Math.round(selectedLayer.transform.position.x)}
-                      onChange={(e) => updateLayer(selectedLayer.id, {
-                        transform: {
-                          ...selectedLayer.transform,
-                          position: { ...selectedLayer.transform.position, x: parseFloat(e.target.value) || 0 }
-                        }
-                      })}
-                      className="property-input"
-                    />
+              {controlMode === 'manual' ? (
+                <>
+                  <div className="property-group">
+                    <label className="property-label">Position</label>
+                    <div className="property-row">
+                      <div className="property-input-wrapper">
+                        <span className="input-label">X</span>
+                        <input
+                          type="number"
+                          value={Math.round(selectedLayer.transform.position.x)}
+                          onChange={(e) => updateLayer(selectedLayer.id, {
+                            transform: {
+                              ...selectedLayer.transform,
+                              position: { ...selectedLayer.transform.position, x: parseFloat(e.target.value) || 0 }
+                            }
+                          })}
+                          className="property-input"
+                        />
+                      </div>
+                      <div className="property-input-wrapper">
+                        <span className="input-label">Y</span>
+                        <input
+                          type="number"
+                          value={Math.round(selectedLayer.transform.position.y)}
+                          onChange={(e) => updateLayer(selectedLayer.id, {
+                            transform: {
+                              ...selectedLayer.transform,
+                              position: { ...selectedLayer.transform.position, y: parseFloat(e.target.value) || 0 }
+                            }
+                          })}
+                          className="property-input"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="property-input-wrapper">
-                    <span className="input-label">Y</span>
-                    <input
-                      type="number"
-                      value={Math.round(selectedLayer.transform.position.y)}
-                      onChange={(e) => updateLayer(selectedLayer.id, {
-                        transform: {
-                          ...selectedLayer.transform,
-                          position: { ...selectedLayer.transform.position, y: parseFloat(e.target.value) || 0 }
-                        }
-                      })}
-                      className="property-input"
-                    />
-                  </div>
-                </div>
-              </div>
 
-              <div className="property-group">
-                <label className="property-label">Rotation</label>
-                <div className="parameter-control">
-                  <input
-                    type="range"
-                    min="0"
-                    max="360"
-                    value={selectedLayer.transform.rotation}
-                    onChange={(e) => updateLayer(selectedLayer.id, {
-                      transform: { ...selectedLayer.transform, rotation: parseFloat(e.target.value) }
-                    })}
-                    className="parameter-slider"
-                  />
-                  <span className="parameter-value">{Math.round(selectedLayer.transform.rotation)}°</span>
-                </div>
-              </div>
+                  <div className="property-group">
+                    <label className="property-label">Rotation</label>
+                    <div className="parameter-control">
+                      <input
+                        type="range"
+                        min="0"
+                        max="360"
+                        value={selectedLayer.transform.rotation}
+                        onChange={(e) => updateLayer(selectedLayer.id, {
+                          transform: { ...selectedLayer.transform, rotation: parseFloat(e.target.value) }
+                        })}
+                        className="parameter-slider"
+                      />
+                      <span className="parameter-value">{Math.round(selectedLayer.transform.rotation)}°</span>
+                    </div>
+                  </div>
 
-              <div className="property-group">
-                <label className="property-label">Dimensions</label>
-                <div className="property-row">
-                  <div className="property-input-wrapper">
-                    <span className="input-label">W</span>
-                    <input
-                      type="number"
-                      value={Math.round(selectedLayer.transform.dimensions.width)}
-                      onChange={(e) => updateLayer(selectedLayer.id, {
+                  <div className="property-group">
+                    <label className="property-label">Dimensions</label>
+                    <div className="property-row">
+                      <div className="property-input-wrapper">
+                        <span className="input-label">W</span>
+                        <input
+                          type="number"
+                          value={Math.round(selectedLayer.transform.dimensions.width)}
+                          onChange={(e) => updateLayer(selectedLayer.id, {
+                            transform: {
+                              ...selectedLayer.transform,
+                              dimensions: { ...selectedLayer.transform.dimensions, width: parseFloat(e.target.value) || 50 }
+                            }
+                          })}
+                          className="property-input"
+                        />
+                      </div>
+                      <div className="property-input-wrapper">
+                        <span className="input-label">H</span>
+                        <input
+                          type="number"
+                          value={Math.round(selectedLayer.transform.dimensions.height)}
+                          onChange={(e) => updateLayer(selectedLayer.id, {
+                            transform: {
+                              ...selectedLayer.transform,
+                              dimensions: { ...selectedLayer.transform.dimensions, height: parseFloat(e.target.value) || 50 }
+                            }
+                          })}
+                          className="property-input"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="property-group">
+                  <button
+                    onClick={() => {
+                      updateLayer(selectedLayer.id, {
                         transform: {
                           ...selectedLayer.transform,
-                          dimensions: { ...selectedLayer.transform.dimensions, width: parseFloat(e.target.value) || 50 }
+                          position: {
+                            x: Math.random() * canvasSize.width,
+                            y: Math.random() * canvasSize.height
+                          },
+                          rotation: Math.random() * 360
                         }
-                      })}
-                      className="property-input"
-                    />
-                  </div>
-                  <div className="property-input-wrapper">
-                    <span className="input-label">H</span>
-                    <input
-                      type="number"
-                      value={Math.round(selectedLayer.transform.dimensions.height)}
-                      onChange={(e) => updateLayer(selectedLayer.id, {
-                        transform: {
-                          ...selectedLayer.transform,
-                          dimensions: { ...selectedLayer.transform.dimensions, height: parseFloat(e.target.value) || 50 }
-                        }
-                      })}
-                      className="property-input"
-                    />
-                  </div>
+                      });
+                    }}
+                    className="randomize-button"
+                    title="Randomize position and rotation"
+                  >
+                    <Shuffle size={16} />
+                    <span>Randomize Position</span>
+                  </button>
                 </div>
-              </div>
+              )}
           </div>
         </div>
       )}
@@ -1029,192 +1103,209 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
             <h3 className="section-title">APPEARANCE</h3>
           </div>
           <div style={{ marginTop: 'var(--space-4)' }}>
-              <div className="property-group">
-                <label className="property-label">Blending Mode</label>
-                <select
-                  className="property-select"
-                  value={selectedLayer.appearance.blendMode}
-                  onChange={(e) => updateLayer(selectedLayer.id, {
-                    appearance: { ...selectedLayer.appearance, blendMode: e.target.value as any }
-                  })}
-                >
-                  <option value="normal">Normal</option>
-                  <option value="multiply">Multiply</option>
-                  <option value="screen">Screen</option>
-                  <option value="overlay">Overlay</option>
-                  <option value="darken">Darken</option>
-                  <option value="lighten">Lighten</option>
-                  <option value="color-dodge">Color Dodge</option>
-                  <option value="color-burn">Color Burn</option>
-                  <option value="hard-light">Hard Light</option>
-                  <option value="soft-light">Soft Light</option>
-                  <option value="difference">Difference</option>
-                  <option value="exclusion">Exclusion</option>
-                </select>
-              </div>
+              {controlMode === 'manual' ? (
+                <>
+                  <div className="property-group">
+                    <label className="property-label">Blending Mode</label>
+                    <select
+                      className="property-select"
+                      value={selectedLayer.appearance.blendMode}
+                      onChange={(e) => updateLayer(selectedLayer.id, {
+                        appearance: { ...selectedLayer.appearance, blendMode: e.target.value as any }
+                      })}
+                    >
+                      <option value="normal">Normal</option>
+                      <option value="multiply">Multiply</option>
+                      <option value="screen">Screen</option>
+                      <option value="overlay">Overlay</option>
+                      <option value="darken">Darken</option>
+                      <option value="lighten">Lighten</option>
+                      <option value="color-dodge">Color Dodge</option>
+                      <option value="color-burn">Color Burn</option>
+                      <option value="hard-light">Hard Light</option>
+                      <option value="soft-light">Soft Light</option>
+                      <option value="difference">Difference</option>
+                      <option value="exclusion">Exclusion</option>
+                    </select>
+                  </div>
 
-              <div className="property-group">
-                <label className="property-label">Opacity</label>
-                <div className="parameter-control">
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={selectedLayer.appearance.opacity}
-                    onChange={(e) => updateLayer(selectedLayer.id, {
-                      appearance: { ...selectedLayer.appearance, opacity: parseFloat(e.target.value) }
-                    })}
-                    className="parameter-slider"
-                  />
-                  <span className="parameter-value">{Math.round(selectedLayer.appearance.opacity)}%</span>
-                </div>
-              </div>
+                  <div className="property-group">
+                    <label className="property-label">Opacity</label>
+                    <div className="parameter-control">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={selectedLayer.appearance.opacity}
+                        onChange={(e) => updateLayer(selectedLayer.id, {
+                          appearance: { ...selectedLayer.appearance, opacity: parseFloat(e.target.value) }
+                        })}
+                        className="parameter-slider"
+                      />
+                      <span className="parameter-value">{Math.round(selectedLayer.appearance.opacity)}%</span>
+                    </div>
+                  </div>
 
-              <div className="property-group">
-                <label className="property-label">Hue</label>
-                <div className="parameter-control">
-                  <input
-                    type="range"
-                    min="-180"
-                    max="180"
-                    value={selectedLayer.appearance.hue}
-                    onChange={(e) => updateLayer(selectedLayer.id, {
-                      appearance: { ...selectedLayer.appearance, hue: parseFloat(e.target.value) }
-                    })}
-                    className="parameter-slider"
-                  />
-                  <span className="parameter-value">{Math.round(selectedLayer.appearance.hue)}°</span>
-                </div>
-              </div>
+                  <div className="property-group">
+                    <label className="property-label">Hue</label>
+                    <div className="parameter-control">
+                      <input
+                        type="range"
+                        min="-180"
+                        max="180"
+                        value={selectedLayer.appearance.hue}
+                        onChange={(e) => updateLayer(selectedLayer.id, {
+                          appearance: { ...selectedLayer.appearance, hue: parseFloat(e.target.value) }
+                        })}
+                        className="parameter-slider"
+                      />
+                      <span className="parameter-value">{Math.round(selectedLayer.appearance.hue)}°</span>
+                    </div>
+                  </div>
 
-              <div className="property-group">
-                <label className="property-label">Saturation</label>
-                <div className="parameter-control">
-                  <input
-                    type="range"
-                    min="-100"
-                    max="100"
-                    value={selectedLayer.appearance.saturation}
-                    onChange={(e) => updateLayer(selectedLayer.id, {
-                      appearance: { ...selectedLayer.appearance, saturation: parseFloat(e.target.value) }
-                    })}
-                    className="parameter-slider"
-                  />
-                  <span className="parameter-value">{Math.round(selectedLayer.appearance.saturation)}%</span>
-                </div>
-              </div>
+                  <div className="property-group">
+                    <label className="property-label">Saturation</label>
+                    <div className="parameter-control">
+                      <input
+                        type="range"
+                        min="-100"
+                        max="100"
+                        value={selectedLayer.appearance.saturation}
+                        onChange={(e) => updateLayer(selectedLayer.id, {
+                          appearance: { ...selectedLayer.appearance, saturation: parseFloat(e.target.value) }
+                        })}
+                        className="parameter-slider"
+                      />
+                      <span className="parameter-value">{Math.round(selectedLayer.appearance.saturation)}%</span>
+                    </div>
+                  </div>
 
-              <div className="property-group">
-                <label className="property-label">Brightness</label>
-                <div className="parameter-control">
-                  <input
-                    type="range"
-                    min="-100"
-                    max="100"
-                    value={selectedLayer.appearance.brightness}
-                    onChange={(e) => updateLayer(selectedLayer.id, {
-                      appearance: { ...selectedLayer.appearance, brightness: parseFloat(e.target.value) }
-                    })}
-                    className="parameter-slider"
-                  />
-                  <span className="parameter-value">{Math.round(selectedLayer.appearance.brightness)}%</span>
-                </div>
-              </div>
+                  <div className="property-group">
+                    <label className="property-label">Brightness</label>
+                    <div className="parameter-control">
+                      <input
+                        type="range"
+                        min="-100"
+                        max="100"
+                        value={selectedLayer.appearance.brightness}
+                        onChange={(e) => updateLayer(selectedLayer.id, {
+                          appearance: { ...selectedLayer.appearance, brightness: parseFloat(e.target.value) }
+                        })}
+                        className="parameter-slider"
+                      />
+                      <span className="parameter-value">{Math.round(selectedLayer.appearance.brightness)}%</span>
+                    </div>
+                  </div>
 
-              <div className="property-group">
-                <label className="property-label">Contrast</label>
-                <div className="parameter-control">
-                  <input
-                    type="range"
-                    min="-100"
-                    max="100"
-                    value={selectedLayer.appearance.contrast}
-                    onChange={(e) => updateLayer(selectedLayer.id, {
-                      appearance: { ...selectedLayer.appearance, contrast: parseFloat(e.target.value) }
-                    })}
-                    className="parameter-slider"
-                  />
-                  <span className="parameter-value">{Math.round(selectedLayer.appearance.contrast)}%</span>
-                </div>
-              </div>
+                  <div className="property-group">
+                    <label className="property-label">Contrast</label>
+                    <div className="parameter-control">
+                      <input
+                        type="range"
+                        min="-100"
+                        max="100"
+                        value={selectedLayer.appearance.contrast}
+                        onChange={(e) => updateLayer(selectedLayer.id, {
+                          appearance: { ...selectedLayer.appearance, contrast: parseFloat(e.target.value) }
+                        })}
+                        className="parameter-slider"
+                      />
+                      <span className="parameter-value">{Math.round(selectedLayer.appearance.contrast)}%</span>
+                    </div>
+                  </div>
 
-              <div className="property-group">
-                <label className="property-label">Feather</label>
-                <div className="parameter-control">
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={selectedLayer.appearance.feather}
-                    onChange={(e) => updateLayer(selectedLayer.id, {
-                      appearance: { ...selectedLayer.appearance, feather: parseFloat(e.target.value) }
-                    })}
-                    className="parameter-slider"
-                  />
-                  <span className="parameter-value">{Math.round(selectedLayer.appearance.feather)}</span>
-                </div>
-              </div>
+                  <div className="property-group">
+                    <label className="property-label">Feather</label>
+                    <div className="parameter-control">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={selectedLayer.appearance.feather}
+                        onChange={(e) => updateLayer(selectedLayer.id, {
+                          appearance: { ...selectedLayer.appearance, feather: parseFloat(e.target.value) }
+                        })}
+                        className="parameter-slider"
+                      />
+                      <span className="parameter-value">{Math.round(selectedLayer.appearance.feather)}</span>
+                    </div>
+                  </div>
 
-              <div className="property-group">
-                <label className="property-label">Flip</label>
-                <div className="flip-buttons">
-                  <button
-                    className="flip-button"
-                    onClick={() => updateLayer(selectedLayer.id, {
-                      transform: { ...selectedLayer.transform, flipX: !selectedLayer.transform.flipX }
-                    })}
-                  >
-                    Horizontal
-                  </button>
-                  <button
-                    className="flip-button"
-                    onClick={() => updateLayer(selectedLayer.id, {
-                      transform: { ...selectedLayer.transform, flipY: !selectedLayer.transform.flipY }
-                    })}
-                  >
-                    Vertical
-                  </button>
-                </div>
-              </div>
+                  <div className="property-group">
+                    <label className="property-label">Flip</label>
+                    <div className="flip-buttons">
+                      <button
+                        className="flip-button"
+                        onClick={() => updateLayer(selectedLayer.id, {
+                          transform: { ...selectedLayer.transform, flipX: !selectedLayer.transform.flipX }
+                        })}
+                      >
+                        Horizontal
+                      </button>
+                      <button
+                        className="flip-button"
+                        onClick={() => updateLayer(selectedLayer.id, {
+                          transform: { ...selectedLayer.transform, flipY: !selectedLayer.transform.flipY }
+                        })}
+                      >
+                        Vertical
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="property-group">
+                    <label className="property-label">Blending Mode</label>
+                    <select
+                      className="property-select"
+                      value={selectedLayer.appearance.blendMode}
+                      onChange={(e) => updateLayer(selectedLayer.id, {
+                        appearance: { ...selectedLayer.appearance, blendMode: e.target.value as any }
+                      })}
+                    >
+                      <option value="normal">Normal</option>
+                      <option value="multiply">Multiply</option>
+                      <option value="screen">Screen</option>
+                      <option value="overlay">Overlay</option>
+                      <option value="darken">Darken</option>
+                      <option value="lighten">Lighten</option>
+                      <option value="color-dodge">Color Dodge</option>
+                      <option value="color-burn">Color Burn</option>
+                      <option value="hard-light">Hard Light</option>
+                      <option value="soft-light">Soft Light</option>
+                      <option value="difference">Difference</option>
+                      <option value="exclusion">Exclusion</option>
+                    </select>
+                  </div>
+                  <div className="property-group">
+                    <button
+                      onClick={() => {
+                        updateLayer(selectedLayer.id, {
+                          appearance: {
+                            ...selectedLayer.appearance,
+                            opacity: 50 + Math.random() * 50,
+                            hue: Math.random() * 360 - 180,
+                            saturation: Math.random() * 100 - 50,
+                          }
+                        });
+                      }}
+                      className="randomize-button"
+                      title="Randomize appearance"
+                    >
+                      <Shuffle size={16} />
+                      <span>Randomize Appearance</span>
+                    </button>
+                  </div>
+                </>
+              )}
           </div>
         </div>
       )}
 
 
-      {/* Canvas Dimensions & Export - at bottom */}
+      {/* Export - at bottom */}
       <div className="bottom-controls">
-        <div className="dimensions-control">
-          <input
-            type="number"
-            min="1"
-            max="10000"
-            value={canvasSize.width}
-            onChange={(e) => handleWidthChange(e.target.value)}
-            onBlur={(e) => {
-              if (!e.target.value || parseInt(e.target.value) <= 0) {
-                setCanvasSize(800, canvasSize.height);
-              }
-            }}
-            className="dimension-input"
-            placeholder="Width"
-          />
-          <span className="dimension-separator">×</span>
-          <input
-            type="number"
-            min="1"
-            max="10000"
-            value={canvasSize.height}
-            onChange={(e) => handleHeightChange(e.target.value)}
-            onBlur={(e) => {
-              if (!e.target.value || parseInt(e.target.value) <= 0) {
-                setCanvasSize(canvasSize.width, 600);
-              }
-            }}
-            className="dimension-input"
-            placeholder="Height"
-          />
-        </div>
-
         <button className="export-button" onClick={() => setShowExportModal(true)} title="Export">
           Export
         </button>

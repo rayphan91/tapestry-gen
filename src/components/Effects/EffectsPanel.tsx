@@ -1,12 +1,9 @@
 import React from 'react';
 import { useTapestryStore } from '@/store/useTapestryStore';
-import { useSwooshStore } from '@/store/useSwooshStore';
 import { Eye, EyeOff, ChevronDown, ChevronRight, Shuffle, Trash2 } from 'lucide-react';
-import { generateRandomSwoosh } from '@/utils/swooshGenerator';
-import { REGIONAL_GRADIENTS } from '@/types';
 import './EffectsPanel.css';
 
-type ItemType = 'grain' | 'scanlines' | 'veins' | 'splatter' | 'brushswooshs' | 'swoosh';
+type ItemType = 'grain' | 'scanlines' | 'veins' | 'splatter' | 'brushswooshs';
 
 // Utility function to get slider fill background
 const getSliderBackground = (value: number, min: number, max: number, theme?: string) => {
@@ -65,23 +62,12 @@ export const EffectsPanel: React.FC = () => {
   const brushStrokesIntensity = useTapestryStore((state) => state.brushStrokesIntensity);
   const brushStrokesOpacity = useTapestryStore((state) => state.brushStrokesOpacity);
   const brushStrokesScale = useTapestryStore((state) => state.brushStrokesScale);
+  const brushStrokesGrain = useTapestryStore((state) => state.brushStrokesGrain);
   const brushStrokesBlendMode = useTapestryStore((state) => state.brushStrokesBlendMode);
   const brushStrokesColor = useTapestryStore((state) => state.brushStrokesColor);
   const brushStrokesColor2 = useTapestryStore((state) => state.brushStrokesColor2);
   const brushStrokesColor3 = useTapestryStore((state) => state.brushStrokesColor3);
   const brushStrokesSeed = useTapestryStore((state) => state.brushStrokesSeed);
-
-  // Swoosh/Stroke state
-  const swooshes = useSwooshStore((state) => state.swooshes);
-  const selectedSwooshId = useSwooshStore((state) => state.selectedSwooshId);
-  const selectSwoosh = useSwooshStore((state) => state.selectSwoosh);
-  const removeSwoosh = useSwooshStore((state) => state.removeSwoosh);
-  const addSwoosh = useSwooshStore((state) => state.addSwoosh);
-  const updateSwoosh = useSwooshStore((state) => state.updateSwoosh);
-  const drawMode = useSwooshStore((state) => state.drawMode);
-  const toggleDrawMode = useSwooshStore((state) => state.toggleDrawMode);
-  const canvasSize = useTapestryStore((state) => state.canvas.size);
-  const customDuotoneColors = useTapestryStore((state) => state.customDuotoneColors);
 
   const setFilmGrainIntensity = useTapestryStore((state) => state.setFilmGrainIntensity);
   const setFilmGrainOpacity = useTapestryStore((state) => state.setFilmGrainOpacity);
@@ -113,28 +99,19 @@ export const EffectsPanel: React.FC = () => {
   const setBrushStrokesIntensity = useTapestryStore((state) => state.setBrushStrokesIntensity);
   const setBrushStrokesOpacity = useTapestryStore((state) => state.setBrushStrokesOpacity);
   const setBrushStrokesScale = useTapestryStore((state) => state.setBrushStrokesScale);
+  const setBrushStrokesGrain = useTapestryStore((state) => state.setBrushStrokesGrain);
   const setBrushStrokesBlendMode = useTapestryStore((state) => state.setBrushStrokesBlendMode);
   const setBrushStrokesColor = useTapestryStore((state) => state.setBrushStrokesColor);
   const setBrushStrokesColor2 = useTapestryStore((state) => state.setBrushStrokesColor2);
   const setBrushStrokesColor3 = useTapestryStore((state) => state.setBrushStrokesColor3);
   const setBrushStrokesSeed = useTapestryStore((state) => state.setBrushStrokesSeed);
   const randomizeBrushStrokesSeed = useTapestryStore((state) => state.randomizeBrushStrokesSeed);
+  const randomizeAllEffects = useTapestryStore((state) => state.randomizeAllEffects);
+  const controlMode = useTapestryStore((state) => state.controlMode);
 
   const [selectedItemId, setSelectedItemId] = React.useState<string | null>(null);
   const [expandedItemId, setExpandedItemId] = React.useState<string | null>(null);
   const [expandedSplatterLayers, setExpandedSplatterLayers] = React.useState<Set<string>>(new Set());
-  const [expandedSwooshLayers, setExpandedSwooshLayers] = React.useState<Set<string>>(new Set());
-
-  // Handler to add a new swoosh
-  const handleAddSwoosh = () => {
-    const gradient = REGIONAL_GRADIENTS.find((g) => g.id === selectedRegion);
-    const duotoneColors = customDuotoneColors || gradient?.duotone;
-    const swooshColor = duotoneColors?.colorA || '#ffffff';
-
-    const swoosh = generateRandomSwoosh(canvasSize.width, canvasSize.height, swooshColor);
-    addSwoosh(swoosh);
-    selectSwoosh(swoosh.id);
-  };
 
   // Auto-update brush swooshs color when Euro region is selected
   React.useEffect(() => {
@@ -162,16 +139,12 @@ export const EffectsPanel: React.FC = () => {
           const layer = splatterLayers.find(l => l.id === selectedItemId);
           if (layer) updateSplatterLayer(selectedItemId, { opacity: opacityValue });
         }
-        // For swoosh layers
-        else if (swooshes.find(s => s.id === selectedItemId)) {
-          useSwooshStore.getState().updateSwoosh(selectedItemId, { opacity: opacityValue });
-        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedItemId, setFilmGrainOpacity, setScanlinesOpacity, setVeinsOpacity, setBrushStrokesOpacity, splatterLayers, updateSplatterLayer, swooshes]);
+  }, [selectedItemId, setFilmGrainOpacity, setScanlinesOpacity, setVeinsOpacity, setBrushStrokesOpacity, splatterLayers, updateSplatterLayer]);
 
   // Build unified list: all effects shown by default
   const layerItems: LayerItem[] = [];
@@ -214,49 +187,7 @@ export const EffectsPanel: React.FC = () => {
     name: 'Splatter',
   });
 
-  // Add single swoosh item (like other effects)
-  layerItems.push({
-    id: 'swoosh',
-    type: 'swoosh',
-    enabled: true,
-    visible: true,
-    name: 'SWOOSH',
-  });
-
   const handleItemTypeChange = (itemId: string, item: LayerItem, newType: ItemType) => {
-    // If changing TO swoosh, create a new swoosh and remove the old effect
-    if (newType === 'swoosh') {
-      // Remove old effect first
-      if (itemId === 'grain') toggleFilmGrain();
-      else if (itemId === 'scanlines') toggleScanlines();
-      else if (itemId === 'veins') toggleVeins();
-      else if (itemId === 'splatter') toggleSplatter();
-      else if (itemId === 'brushswooshs') toggleBrushStrokes();
-      else if (item.type === 'swoosh') {
-        // Already a swoosh, do nothing
-        return;
-      }
-
-      // Create new swoosh
-      handleAddSwoosh();
-      return;
-    }
-
-    // If changing FROM swoosh to something else
-    if (item.type === 'swoosh') {
-      // Remove the swoosh
-      removeSwoosh(itemId);
-      if (selectedSwooshId === itemId) {
-        selectSwoosh(null);
-      }
-      // Add the new effect
-      if (newType === 'grain') toggleFilmGrain();
-      else if (newType === 'scanlines') toggleScanlines();
-      else if (newType === 'veins') toggleVeins();
-      else if (newType === 'splatter') toggleSplatter();
-      else if (newType === 'brushswooshs') toggleBrushStrokes();
-      return;
-    }
 
     // Normal effect type change
     // Toggle off current effect
@@ -280,13 +211,6 @@ export const EffectsPanel: React.FC = () => {
     else if (itemId === 'veins') toggleVeins();
     else if (itemId === 'splatter') toggleSplatter();
     else if (itemId === 'brushswooshs') toggleBrushStrokes();
-    else if (item.type === 'swoosh') {
-      // Remove individual swoosh
-      removeSwoosh(itemId);
-      if (selectedSwooshId === itemId) {
-        selectSwoosh(null);
-      }
-    }
     else if (itemId.startsWith('splatter-')) {
       // Remove individual splatter layer
       removeSplatterLayer(itemId);
@@ -330,6 +254,19 @@ export const EffectsPanel: React.FC = () => {
 
   return (
     <div className="effects-panel">
+      {controlMode === 'auto' && (
+        <div style={{ marginBottom: 'var(--space-3)' }}>
+          <button
+            onClick={randomizeAllEffects}
+            className="randomize-button"
+            style={{ width: '100%' }}
+            title="Randomize all effects at once"
+          >
+            <Shuffle size={16} />
+            <span>Randomize All Effects</span>
+          </button>
+        </div>
+      )}
       <div className="effects-list">
         {layerItems.length === 0 ? (
           <div className="effects-empty">No items added</div>
@@ -340,13 +277,15 @@ export const EffectsPanel: React.FC = () => {
                 className={`effect-item ${selectedItemId === item.id ? 'selected' : ''}`}
                 onClick={() => handleItemClick(item.id)}
               >
-                <button
-                  className="effect-action-btn"
-                  onClick={(e) => handleToggleExpand(item.id, e)}
-                  title="Toggle parameters"
-                >
-                  {expandedItemId === item.id ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                </button>
+                {controlMode === 'manual' && (
+                  <button
+                    className="effect-action-btn"
+                    onClick={(e) => handleToggleExpand(item.id, e)}
+                    title="Toggle parameters"
+                  >
+                    {expandedItemId === item.id ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                  </button>
+                )}
 
                 <div className="effect-name-box">
                   <span className="effect-name">
@@ -354,8 +293,7 @@ export const EffectsPanel: React.FC = () => {
                     {item.type === 'scanlines' && 'SCANLINES'}
                     {item.type === 'veins' && 'VEINS'}
                     {item.type === 'splatter' && 'SPLATTER'}
-                    {item.type === 'brushswooshs' && 'STROKE'}
-                    {item.type === 'swoosh' && 'SWOOSH'}
+                    {item.type === 'brushswooshs' && 'BRUSH STROKES'}
                   </span>
 
                   {/* Inline Opacity Control - now including splatter and swoosh for global control */}
@@ -370,7 +308,6 @@ export const EffectsPanel: React.FC = () => {
                         item.type === 'veins' ? Math.round(veinsOpacity * 100) :
                         item.type === 'brushswooshs' ? Math.round(brushStrokesOpacity * 100) :
                         item.type === 'splatter' ? Math.round(splatterOpacity * 100) :
-                        item.type === 'swoosh' ? Math.round(swooshOpacity * 100) :
                         0
                       }
                       onChange={(e) => {
@@ -381,7 +318,6 @@ export const EffectsPanel: React.FC = () => {
                         else if (item.type === 'veins') setVeinsOpacity(value);
                         else if (item.type === 'brushswooshs') setBrushStrokesOpacity(value);
                         else if (item.type === 'splatter') setSplatterOpacity(value);
-                        else if (item.type === 'swoosh') setSwooshOpacity(value);
                       }}
                       onMouseDown={(e) => {
                         if (e.button === 0) { // Left mouse button only
@@ -391,7 +327,6 @@ export const EffectsPanel: React.FC = () => {
                             item.type === 'veins' ? Math.round(veinsOpacity * 100) :
                             item.type === 'brushswooshs' ? Math.round(brushStrokesOpacity * 100) :
                             item.type === 'splatter' ? Math.round(splatterOpacity * 100) :
-                            item.type === 'swoosh' ? Math.round(swooshOpacity * 100) :
                             0;
 
                           const onChange = (newValue: number) => {
@@ -401,7 +336,6 @@ export const EffectsPanel: React.FC = () => {
                             else if (item.type === 'veins') setVeinsOpacity(value);
                             else if (item.type === 'brushswooshs') setBrushStrokesOpacity(value);
                             else if (item.type === 'splatter') setSplatterOpacity(value);
-                            else if (item.type === 'swoosh') setSwooshOpacity(value);
                           };
 
                           handleOpacityDrag(e, currentValue, onChange);
@@ -424,10 +358,6 @@ export const EffectsPanel: React.FC = () => {
                     else if (item.id === 'veins') toggleVeins();
                     else if (item.id === 'splatter') toggleSplatter();
                     else if (item.id === 'brushswooshs') toggleBrushStrokes();
-                    else if (item.type === 'swoosh') {
-                      // Toggle individual swoosh visibility
-                      updateSwoosh(item.id, { visible: !item.visible });
-                    }
                   }}
                   title={item.visible ? "Hide layer" : "Show layer"}
                 >
@@ -436,9 +366,9 @@ export const EffectsPanel: React.FC = () => {
               </div>
 
               {/* Inline Parameters - shown when expanded */}
-              {expandedItemId === item.id && (
+              {expandedItemId === item.id && controlMode === 'manual' && (
                 <div className="effect-parameters">
-                  {item.type === 'grain' && (
+                  {item.type === 'grain' && controlMode === 'manual' && (
                     <>
                       <div className="parameter-group">
                         <label className="parameter-label">Intensity</label>
@@ -501,7 +431,7 @@ export const EffectsPanel: React.FC = () => {
                     </>
                   )}
 
-                  {item.type === 'scanlines' && (
+                  {item.type === 'scanlines' && controlMode === 'manual' && (
                     <>
                       <div className="parameter-group">
                         <label className="parameter-label">Intensity</label>
@@ -591,110 +521,125 @@ export const EffectsPanel: React.FC = () => {
 
                   {item.type === 'veins' && (
                     <>
-                      <div className="parameter-group">
-                        <label className="parameter-label">Intensity</label>
-                        <div className="parameter-control">
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={veinsIntensity * 100}
-                            onChange={(e) => setVeinsIntensity(parseFloat(e.target.value) / 100)}
-                            className="parameter-slider"
-                          />
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={Math.round(veinsIntensity * 100)}
-                            onChange={(e) => setVeinsIntensity(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) / 100)}
-                            className="parameter-value"
-                          />
-                        </div>
-                      </div>
+                      {controlMode === 'manual' ? (
+                        <>
+                          <div className="parameter-group">
+                            <label className="parameter-label">Intensity</label>
+                            <div className="parameter-control">
+                              <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={veinsIntensity * 100}
+                                onChange={(e) => setVeinsIntensity(parseFloat(e.target.value) / 100)}
+                                className="parameter-slider"
+                              />
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={Math.round(veinsIntensity * 100)}
+                                onChange={(e) => setVeinsIntensity(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) / 100)}
+                                className="parameter-value"
+                              />
+                            </div>
+                          </div>
 
-                      <div className="parameter-group">
-                        <label className="parameter-label">Scale</label>
-                        <div className="parameter-control">
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={veinsScale * 100}
-                            onChange={(e) => setVeinsScale(parseFloat(e.target.value) / 100)}
-                            className="parameter-slider"
-                          />
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={Math.round(veinsScale * 100)}
-                            onChange={(e) => setVeinsScale(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) / 100)}
-                            className="parameter-value"
-                          />
-                        </div>
-                      </div>
+                          <div className="parameter-group">
+                            <label className="parameter-label">Scale</label>
+                            <div className="parameter-control">
+                              <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={veinsScale * 100}
+                                onChange={(e) => setVeinsScale(parseFloat(e.target.value) / 100)}
+                                className="parameter-slider"
+                              />
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={Math.round(veinsScale * 100)}
+                                onChange={(e) => setVeinsScale(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) / 100)}
+                                className="parameter-value"
+                              />
+                            </div>
+                          </div>
 
-                      <div className="parameter-group">
-                        <label className="parameter-label">Color</label>
-                        <input
-                          type="color"
-                          value={veinsColor}
-                          onChange={(e) => setVeinsColor(e.target.value)}
-                          className="color-input"
-                        />
-                      </div>
+                          <div className="parameter-group">
+                            <label className="parameter-label">Color</label>
+                            <input
+                              type="color"
+                              value={veinsColor}
+                              onChange={(e) => setVeinsColor(e.target.value)}
+                              className="color-input"
+                            />
+                          </div>
 
-                      <div className="parameter-group">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <label className="parameter-label" style={{ marginBottom: 0 }}>Seed</label>
+                          <div className="parameter-group">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <label className="parameter-label" style={{ marginBottom: 0 }}>Seed</label>
+                              <button
+                                onClick={randomizeVeinsSeed}
+                                className="parameter-icon-btn"
+                                title="Randomize"
+                              >
+                                <Shuffle size={14} />
+                              </button>
+                            </div>
+                            <div className="parameter-control" style={{ marginTop: 'var(--space-2)' }}>
+                              <input
+                                type="range"
+                                min="0"
+                                max="1000000"
+                                step="1"
+                                value={Math.round(veinsSeed * 1000000)}
+                                onChange={(e) => setVeinsSeed(parseFloat(e.target.value) / 1000000)}
+                                className="parameter-slider"
+                              />
+                              <input
+                                type="number"
+                                min="0"
+                                max="1000000"
+                                value={Math.round(veinsSeed * 1000000)}
+                                onChange={(e) => setVeinsSeed(Math.max(0, Math.min(1000000, parseInt(e.target.value) || 0)) / 1000000)}
+                                className="parameter-value"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="parameter-group">
+                            <label className="parameter-label">Blend Mode</label>
+                            <select
+                              className="parameter-select"
+                              value={veinsBlendMode}
+                              onChange={(e) => setVeinsBlendMode(e.target.value)}
+                            >
+                              <option value="normal">Normal</option>
+                              <option value="multiply">Multiply</option>
+                              <option value="screen">Screen</option>
+                              <option value="overlay">Overlay</option>
+                              <option value="darken">Darken</option>
+                              <option value="lighten">Lighten</option>
+                              <option value="soft-light">Soft Light</option>
+                              <option value="color-dodge">Color Dodge</option>
+                              <option value="color-burn">Color Burn</option>
+                            </select>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="parameter-group">
                           <button
                             onClick={randomizeVeinsSeed}
-                            className="parameter-icon-btn"
-                            title="Randomize"
+                            className="randomize-button"
+                            title="Randomize veins"
                           >
-                            <Shuffle size={14} />
+                            <Shuffle size={16} />
+                            <span>Randomize Veins</span>
                           </button>
                         </div>
-                        <div className="parameter-control" style={{ marginTop: 'var(--space-2)' }}>
-                          <input
-                            type="range"
-                            min="0"
-                            max="1000000"
-                            step="1"
-                            value={Math.round(veinsSeed * 1000000)}
-                            onChange={(e) => setVeinsSeed(parseFloat(e.target.value) / 1000000)}
-                            className="parameter-slider"
-                          />
-                          <input
-                            type="number"
-                            min="0"
-                            max="1000000"
-                            value={Math.round(veinsSeed * 1000000)}
-                            onChange={(e) => setVeinsSeed(Math.max(0, Math.min(1000000, parseInt(e.target.value) || 0)) / 1000000)}
-                            className="parameter-value"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="parameter-group">
-                        <label className="parameter-label">Blend Mode</label>
-                        <select
-                          className="parameter-select"
-                          value={veinsBlendMode}
-                          onChange={(e) => setVeinsBlendMode(e.target.value)}
-                        >
-                          <option value="normal">Normal</option>
-                          <option value="multiply">Multiply</option>
-                          <option value="screen">Screen</option>
-                          <option value="overlay">Overlay</option>
-                          <option value="darken">Darken</option>
-                          <option value="lighten">Lighten</option>
-                          <option value="soft-light">Soft Light</option>
-                          <option value="color-dodge">Color Dodge</option>
-                          <option value="color-burn">Color Burn</option>
-                        </select>
-                      </div>
+                      )}
                     </>
                   )}
 
@@ -780,6 +725,135 @@ export const EffectsPanel: React.FC = () => {
 
                             {isLayerExpanded && (
                               <>
+                                {controlMode === 'manual' ? (
+                                  <>
+                                    <div className="parameter-group">
+                                      <label className="parameter-label">Intensity</label>
+                                      <div className="parameter-control">
+                                        <input
+                                          type="range"
+                                          min="0"
+                                          max="100"
+                                          value={splatterLayer.intensity * 100}
+                                          onChange={(e) => updateSplatterLayer(splatterLayer.id, { intensity: parseFloat(e.target.value) / 100 })}
+                                          className="parameter-slider"
+                                        />
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          max="100"
+                                          value={Math.round(splatterLayer.intensity * 100)}
+                                          onChange={(e) => updateSplatterLayer(splatterLayer.id, { intensity: Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) / 100 })}
+                                          className="parameter-value"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="parameter-group">
+                                      <label className="parameter-label">Scale</label>
+                                      <div className="parameter-control">
+                                        <input
+                                          type="range"
+                                          min="0"
+                                          max="100"
+                                          value={splatterLayer.scale * 100}
+                                          onChange={(e) => updateSplatterLayer(splatterLayer.id, { scale: parseFloat(e.target.value) / 100 })}
+                                          className="parameter-slider"
+                                        />
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          max="100"
+                                          value={Math.round(splatterLayer.scale * 100)}
+                                          onChange={(e) => updateSplatterLayer(splatterLayer.id, { scale: Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) / 100 })}
+                                          className="parameter-value"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="parameter-group">
+                                      <label className="parameter-label">Color</label>
+                                      <input
+                                        type="color"
+                                        value={splatterLayer.color}
+                                        onChange={(e) => updateSplatterLayer(splatterLayer.id, { color: e.target.value })}
+                                        className="color-input"
+                                      />
+                                    </div>
+
+                                    <div className="parameter-group">
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <label className="parameter-label" style={{ marginBottom: 0 }}>Seed</label>
+                                        <button
+                                          onClick={() => updateSplatterLayer(splatterLayer.id, { seed: Math.random() })}
+                                          className="parameter-icon-btn"
+                                          title="Randomize"
+                                        >
+                                          <Shuffle size={14} />
+                                        </button>
+                                      </div>
+                                      <div className="parameter-control" style={{ marginTop: 'var(--space-2)' }}>
+                                        <input
+                                          type="range"
+                                          min="0"
+                                          max="1000000"
+                                          step="1"
+                                          value={Math.round(splatterLayer.seed * 1000000)}
+                                          onChange={(e) => updateSplatterLayer(splatterLayer.id, { seed: parseFloat(e.target.value) / 1000000 })}
+                                          className="parameter-slider"
+                                        />
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          max="1000000"
+                                          value={Math.round(splatterLayer.seed * 1000000)}
+                                          onChange={(e) => updateSplatterLayer(splatterLayer.id, { seed: Math.max(0, Math.min(1000000, parseInt(e.target.value) || 0)) / 1000000 })}
+                                          className="parameter-value"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="parameter-group">
+                                      <label className="parameter-label">Blend Mode</label>
+                                      <select
+                                        className="parameter-select"
+                                        value={splatterLayer.blendMode}
+                                        onChange={(e) => updateSplatterLayer(splatterLayer.id, { blendMode: e.target.value })}
+                                      >
+                                        <option value="normal">Normal</option>
+                                        <option value="multiply">Multiply</option>
+                                        <option value="screen">Screen</option>
+                                        <option value="overlay">Overlay</option>
+                                        <option value="darken">Darken</option>
+                                        <option value="lighten">Lighten</option>
+                                        <option value="soft-light">Soft Light</option>
+                                      </select>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="parameter-group">
+                                    <button
+                                      onClick={() => updateSplatterLayer(splatterLayer.id, { seed: Math.random() })}
+                                      className="randomize-button"
+                                      title="Randomize splatter layer"
+                                    >
+                                      <Shuffle size={16} />
+                                      <span>Randomize Layer {index + 1}</span>
+                                    </button>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+
+                  {item.type === 'brushswooshs' && (
+                    <>
+                      {controlMode === 'manual' ? (
+                        <>
                           <div className="parameter-group">
                             <label className="parameter-label">Intensity</label>
                             <div className="parameter-control">
@@ -787,16 +861,16 @@ export const EffectsPanel: React.FC = () => {
                                 type="range"
                                 min="0"
                                 max="100"
-                                value={splatterLayer.intensity * 100}
-                                onChange={(e) => updateSplatterLayer(splatterLayer.id, { intensity: parseFloat(e.target.value) / 100 })}
+                                value={brushStrokesIntensity * 100}
+                                onChange={(e) => setBrushStrokesIntensity(parseFloat(e.target.value) / 100)}
                                 className="parameter-slider"
                               />
                               <input
                                 type="number"
                                 min="0"
                                 max="100"
-                                value={Math.round(splatterLayer.intensity * 100)}
-                                onChange={(e) => updateSplatterLayer(splatterLayer.id, { intensity: Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) / 100 })}
+                                value={Math.round(brushStrokesIntensity * 100)}
+                                onChange={(e) => setBrushStrokesIntensity(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) / 100)}
                                 className="parameter-value"
                               />
                             </div>
@@ -809,16 +883,38 @@ export const EffectsPanel: React.FC = () => {
                                 type="range"
                                 min="0"
                                 max="100"
-                                value={splatterLayer.scale * 100}
-                                onChange={(e) => updateSplatterLayer(splatterLayer.id, { scale: parseFloat(e.target.value) / 100 })}
+                                value={brushStrokesScale * 100}
+                                onChange={(e) => setBrushStrokesScale(parseFloat(e.target.value) / 100)}
                                 className="parameter-slider"
                               />
                               <input
                                 type="number"
                                 min="0"
                                 max="100"
-                                value={Math.round(splatterLayer.scale * 100)}
-                                onChange={(e) => updateSplatterLayer(splatterLayer.id, { scale: Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) / 100 })}
+                                value={Math.round(brushStrokesScale * 100)}
+                                onChange={(e) => setBrushStrokesScale(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) / 100)}
+                                className="parameter-value"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="parameter-group">
+                            <label className="parameter-label">Grain</label>
+                            <div className="parameter-control">
+                              <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={brushStrokesGrain * 100}
+                                onChange={(e) => setBrushStrokesGrain(parseFloat(e.target.value) / 100)}
+                                className="parameter-slider"
+                              />
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={Math.round(brushStrokesGrain * 100)}
+                                onChange={(e) => setBrushStrokesGrain(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) / 100)}
                                 className="parameter-value"
                               />
                             </div>
@@ -828,8 +924,8 @@ export const EffectsPanel: React.FC = () => {
                             <label className="parameter-label">Color</label>
                             <input
                               type="color"
-                              value={splatterLayer.color}
-                              onChange={(e) => updateSplatterLayer(splatterLayer.id, { color: e.target.value })}
+                              value={brushStrokesColor}
+                              onChange={(e) => setBrushStrokesColor(e.target.value)}
                               className="color-input"
                             />
                           </div>
@@ -838,7 +934,7 @@ export const EffectsPanel: React.FC = () => {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <label className="parameter-label" style={{ marginBottom: 0 }}>Seed</label>
                               <button
-                                onClick={() => updateSplatterLayer(splatterLayer.id, { seed: Math.random() })}
+                                onClick={randomizeBrushStrokesSeed}
                                 className="parameter-icon-btn"
                                 title="Randomize"
                               >
@@ -851,16 +947,16 @@ export const EffectsPanel: React.FC = () => {
                                 min="0"
                                 max="1000000"
                                 step="1"
-                                value={Math.round(splatterLayer.seed * 1000000)}
-                                onChange={(e) => updateSplatterLayer(splatterLayer.id, { seed: parseFloat(e.target.value) / 1000000 })}
+                                value={Math.round(brushStrokesSeed * 1000000)}
+                                onChange={(e) => setBrushStrokesSeed(parseFloat(e.target.value) / 1000000)}
                                 className="parameter-slider"
                               />
                               <input
                                 type="number"
                                 min="0"
                                 max="1000000"
-                                value={Math.round(splatterLayer.seed * 1000000)}
-                                onChange={(e) => updateSplatterLayer(splatterLayer.id, { seed: Math.max(0, Math.min(1000000, parseInt(e.target.value) || 0)) / 1000000 })}
+                                value={Math.round(brushStrokesSeed * 1000000)}
+                                onChange={(e) => setBrushStrokesSeed(Math.max(0, Math.min(1000000, parseInt(e.target.value) || 0)) / 1000000)}
                                 className="parameter-value"
                               />
                             </div>
@@ -870,8 +966,8 @@ export const EffectsPanel: React.FC = () => {
                             <label className="parameter-label">Blend Mode</label>
                             <select
                               className="parameter-select"
-                              value={splatterLayer.blendMode}
-                              onChange={(e) => updateSplatterLayer(splatterLayer.id, { blendMode: e.target.value })}
+                              value={brushStrokesBlendMode}
+                              onChange={(e) => setBrushStrokesBlendMode(e.target.value)}
                             >
                               <option value="normal">Normal</option>
                               <option value="multiply">Multiply</option>
@@ -882,118 +978,19 @@ export const EffectsPanel: React.FC = () => {
                               <option value="soft-light">Soft Light</option>
                             </select>
                           </div>
-                              </>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </>
-                  )}
-
-                  {item.type === 'brushswooshs' && (
-                    <>
-                      <div className="parameter-group">
-                        <label className="parameter-label">Intensity</label>
-                        <div className="parameter-control">
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={brushStrokesIntensity * 100}
-                            onChange={(e) => setBrushStrokesIntensity(parseFloat(e.target.value) / 100)}
-                            className="parameter-slider"
-                          />
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={Math.round(brushStrokesIntensity * 100)}
-                            onChange={(e) => setBrushStrokesIntensity(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) / 100)}
-                            className="parameter-value"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="parameter-group">
-                        <label className="parameter-label">Scale</label>
-                        <div className="parameter-control">
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={brushStrokesScale * 100}
-                            onChange={(e) => setBrushStrokesScale(parseFloat(e.target.value) / 100)}
-                            className="parameter-slider"
-                          />
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={Math.round(brushStrokesScale * 100)}
-                            onChange={(e) => setBrushStrokesScale(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) / 100)}
-                            className="parameter-value"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="parameter-group">
-                        <label className="parameter-label">Color</label>
-                        <input
-                          type="color"
-                          value={brushStrokesColor}
-                          onChange={(e) => setBrushStrokesColor(e.target.value)}
-                          className="color-input"
-                        />
-                      </div>
-
-                      <div className="parameter-group">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <label className="parameter-label" style={{ marginBottom: 0 }}>Seed</label>
+                        </>
+                      ) : (
+                        <div className="parameter-group">
                           <button
                             onClick={randomizeBrushStrokesSeed}
-                            className="parameter-icon-btn"
-                            title="Randomize"
+                            className="randomize-button"
+                            title="Randomize brush strokes"
                           >
-                            <Shuffle size={14} />
+                            <Shuffle size={16} />
+                            <span>Randomize Brush Strokes</span>
                           </button>
                         </div>
-                        <div className="parameter-control" style={{ marginTop: 'var(--space-2)' }}>
-                          <input
-                            type="range"
-                            min="0"
-                            max="1000000"
-                            step="1"
-                            value={Math.round(brushStrokesSeed * 1000000)}
-                            onChange={(e) => setBrushStrokesSeed(parseFloat(e.target.value) / 1000000)}
-                            className="parameter-slider"
-                          />
-                          <input
-                            type="number"
-                            min="0"
-                            max="1000000"
-                            value={Math.round(brushStrokesSeed * 1000000)}
-                            onChange={(e) => setBrushStrokesSeed(Math.max(0, Math.min(1000000, parseInt(e.target.value) || 0)) / 1000000)}
-                            className="parameter-value"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="parameter-group">
-                        <label className="parameter-label">Blend Mode</label>
-                        <select
-                          className="parameter-select"
-                          value={brushStrokesBlendMode}
-                          onChange={(e) => setBrushStrokesBlendMode(e.target.value)}
-                        >
-                          <option value="normal">Normal</option>
-                          <option value="multiply">Multiply</option>
-                          <option value="screen">Screen</option>
-                          <option value="overlay">Overlay</option>
-                          <option value="darken">Darken</option>
-                          <option value="lighten">Lighten</option>
-                          <option value="soft-light">Soft Light</option>
-                        </select>
-                      </div>
+                      )}
                     </>
                   )}
 
@@ -1064,58 +1061,82 @@ export const EffectsPanel: React.FC = () => {
                         )}
                       </div>
 
-                      {/* Show all swoosh layers in a grouped format */}
+                      {/* Show all swoosh layers in a simple list */}
                       {swooshes.map((swoosh, index) => {
-                        const isLayerExpanded = expandedSwooshLayers.has(swoosh.id);
-
                         return (
                           <div key={swoosh.id} style={{
-                            marginBottom: 'var(--space-4)',
-                            paddingBottom: 'var(--space-3)',
-                            borderBottom: index < swooshes.length - 1 ? '1px solid var(--color-border-light)' : 'none'
+                            marginBottom: 'var(--space-2)',
                           }}>
                             <div
                               style={{
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
-                                marginBottom: isLayerExpanded ? 'var(--space-2)' : '0',
                                 cursor: 'pointer',
-                                padding: '4px',
+                                padding: '8px 10px',
                                 borderRadius: 'var(--radius-sm)',
-                                transition: 'background-color var(--transition-fast)',
+                                backgroundColor: selectedSwooshId === swoosh.id ? 'var(--color-primary-dark)' : 'transparent',
+                                border: selectedSwooshId === swoosh.id ? '1px solid var(--color-primary)' : '1px solid transparent',
+                                transition: 'all var(--transition-fast)',
                               }}
                               onClick={() => {
-                                const newExpanded = new Set(expandedSwooshLayers);
-                                if (isLayerExpanded) {
-                                  newExpanded.delete(swoosh.id);
+                                // Toggle selection
+                                if (selectedSwooshId === swoosh.id) {
+                                  selectSwoosh(null);
                                 } else {
-                                  newExpanded.add(swoosh.id);
+                                  selectSwoosh(swoosh.id);
                                 }
-                                setExpandedSwooshLayers(newExpanded);
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'var(--color-surface-secondary)';
+                                if (selectedSwooshId !== swoosh.id) {
+                                  e.currentTarget.style.backgroundColor = 'var(--color-surface-secondary)';
+                                }
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = 'transparent';
+                                if (selectedSwooshId !== swoosh.id) {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                }
                               }}
                             >
                               <span style={{
                                 fontSize: '11px',
                                 fontWeight: 'var(--font-weight-semibold)',
-                                color: 'var(--color-text-secondary)',
+                                color: selectedSwooshId === swoosh.id ? 'var(--color-primary)' : 'var(--color-text-secondary)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '6px',
                               }}>
-                                {isLayerExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                                 Swoosh {index + 1}
                               </span>
 
                               {/* Inline Opacity Control for Swoosh Layer */}
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <div className="inline-opacity-control">
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {/* Visibility toggle */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    useSwooshStore.getState().updateSwoosh(swoosh.id, { visible: swoosh.visible === false ? true : false });
+                                  }}
+                                  style={{
+                                    padding: '3px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    backgroundColor: 'transparent',
+                                    border: 'none',
+                                    borderRadius: 'var(--radius-xs)',
+                                    color: swoosh.visible === false ? 'var(--color-text-tertiary)' : (selectedSwooshId === swoosh.id ? 'var(--color-primary)' : 'var(--color-text-secondary)'),
+                                    cursor: 'pointer',
+                                    transition: 'all var(--transition-fast)',
+                                  }}
+                                  title={swoosh.visible === false ? 'Show' : 'Hide'}
+                                >
+                                  {swoosh.visible === false ? <EyeOff size={14} /> : <Eye size={14} />}
+                                </button>
+
+                                <div className="inline-opacity-control" style={{
+                                  borderColor: selectedSwooshId === swoosh.id ? 'var(--color-primary)' : undefined,
+                                }}>
                                   <input
                                     type="number"
                                     min="0"
@@ -1137,8 +1158,13 @@ export const EffectsPanel: React.FC = () => {
                                     }}
                                     onClick={(e) => e.stopPropagation()}
                                     className="inline-opacity-input"
+                                    style={{
+                                      color: selectedSwooshId === swoosh.id ? 'var(--color-primary)' : undefined,
+                                    }}
                                   />
-                                  <span className="inline-opacity-percent">%</span>
+                                  <span className="inline-opacity-percent" style={{
+                                    color: selectedSwooshId === swoosh.id ? 'var(--color-primary)' : undefined,
+                                  }}>%</span>
                                 </div>
 
                                 {/* Remove button next to opacity */}
@@ -1173,84 +1199,6 @@ export const EffectsPanel: React.FC = () => {
                                 </button>
                               </div>
                             </div>
-
-                            {isLayerExpanded && (
-                              <>
-                                <div className="parameter-group">
-                                  <label className="parameter-label">Color</label>
-                                  <input
-                                    type="color"
-                                    value={swoosh.color}
-                                    onChange={(e) => useSwooshStore.getState().updateSwoosh(swoosh.id, { color: e.target.value })}
-                                    className="color-picker"
-                                  />
-                                </div>
-
-                                <div className="parameter-group">
-                                  <label className="parameter-label">Thickness</label>
-                                  <div className="parameter-control">
-                                    <input
-                                      type="range"
-                                      min="10"
-                                      max="500"
-                                      value={swoosh.thickness}
-                                      onChange={(e) => useSwooshStore.getState().updateSwoosh(swoosh.id, { thickness: parseFloat(e.target.value) })}
-                                      className="parameter-slider"
-                                    />
-                                    <input
-                                      type="number"
-                                      min="10"
-                                      max="500"
-                                      value={Math.round(swoosh.thickness)}
-                                      onChange={(e) => useSwooshStore.getState().updateSwoosh(swoosh.id, { thickness: Math.max(10, Math.min(500, parseFloat(e.target.value) || 10)) })}
-                                      className="parameter-value"
-                                    />
-                                  </div>
-                                </div>
-
-                                <div className="parameter-group">
-                                  <label className="parameter-label">Blur</label>
-                                  <div className="parameter-control">
-                                    <input
-                                      type="range"
-                                      min="0"
-                                      max="50"
-                                      value={swoosh.blur || 0}
-                                      onChange={(e) => useSwooshStore.getState().updateSwoosh(swoosh.id, { blur: parseFloat(e.target.value) })}
-                                      className="parameter-slider"
-                                    />
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      max="50"
-                                      value={Math.round(swoosh.blur || 0)}
-                                      onChange={(e) => useSwooshStore.getState().updateSwoosh(swoosh.id, { blur: Math.max(0, Math.min(50, parseFloat(e.target.value) || 0)) })}
-                                      className="parameter-value"
-                                    />
-                                  </div>
-                                </div>
-
-                                <div className="parameter-group">
-                                  <label className="parameter-label">Blend Mode</label>
-                                  <select
-                                    className="parameter-select"
-                                    value={swoosh.blendMode || 'normal'}
-                                    onChange={(e) => useSwooshStore.getState().updateSwoosh(swoosh.id, { blendMode: e.target.value as any })}
-                                  >
-                                    <option value="normal">Normal</option>
-                                    <option value="multiply">Multiply</option>
-                                    <option value="screen">Screen</option>
-                                    <option value="overlay">Overlay</option>
-                                    <option value="darken">Darken</option>
-                                    <option value="lighten">Lighten</option>
-                                    <option value="color-dodge">Color Dodge</option>
-                                    <option value="color-burn">Color Burn</option>
-                                    <option value="hard-light">Hard Light</option>
-                                    <option value="soft-light">Soft Light</option>
-                                  </select>
-                                </div>
-                              </>
-                            )}
                           </div>
                         );
                       })}
