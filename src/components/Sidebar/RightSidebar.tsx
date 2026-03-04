@@ -163,11 +163,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ collapsed }) => {
   };
 
   const handleGenerateImages = async () => {
-    if (!apiKey || apiKey.trim() === '' || apiKey === 'YOUR_API_KEY_HERE') {
-      alert('API key not configured. Please contact the developer.');
-      return;
-    }
-
+    // No API key validation needed - proxy will be used if no key is provided
     setIsGenerating(true);
     try {
       // Available themes for randomization when "mixed" is selected
