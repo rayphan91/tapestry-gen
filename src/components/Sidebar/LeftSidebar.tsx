@@ -46,6 +46,7 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({ collapsed }) => {
   const selectSwoosh = useSwooshStore((state) => state.selectSwoosh);
   const addSwoosh = useSwooshStore((state) => state.addSwoosh);
   const removeSwoosh = useSwooshStore((state) => state.removeSwoosh);
+  const updateSwoosh = useSwooshStore((state) => state.updateSwoosh);
   const drawMode = useSwooshStore((state) => state.drawMode);
   const toggleDrawMode = useSwooshStore((state) => state.toggleDrawMode);
 
@@ -624,6 +625,15 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({ collapsed }) => {
                     alignItems: 'center',
                     gap: '6px',
                   }}>
+                    {/* Color indicator square */}
+                    <div style={{
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '2px',
+                      backgroundColor: swoosh.color,
+                      border: '1px solid var(--color-border-light)',
+                      flexShrink: 0,
+                    }} />
                     Swoosh {index + 1}
                   </span>
 
@@ -717,6 +727,86 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({ collapsed }) => {
                     </button>
                   </div>
                 </div>
+
+                {/* Swoosh parameters - shown when selected and in manual mode */}
+                {selectedSwooshId === swoosh.id && controlMode === 'manual' && (
+                  <div style={{
+                    marginTop: 'var(--space-2)',
+                    padding: 'var(--space-3)',
+                    backgroundColor: 'var(--color-surface-secondary)',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--color-border-light)',
+                  }}>
+                    {/* Color picker */}
+                    <div className="parameter-group">
+                      <label className="parameter-label">Color</label>
+                      <input
+                        type="color"
+                        value={swoosh.color}
+                        onChange={(e) => updateSwoosh(swoosh.id, { color: e.target.value })}
+                        className="color-input"
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+
+                    {/* Blur control */}
+                    <div className="parameter-group">
+                      <label className="parameter-label">Blur</label>
+                      <div className="parameter-control">
+                        <input
+                          type="range"
+                          min="0"
+                          max="20"
+                          step="0.5"
+                          value={swoosh.blur || 0}
+                          onChange={(e) => updateSwoosh(swoosh.id, { blur: parseFloat(e.target.value) })}
+                          className="parameter-slider"
+                        />
+                        <span className="parameter-value">{(swoosh.blur || 0).toFixed(1)}px</span>
+                      </div>
+                    </div>
+
+                    {/* Thickness control */}
+                    <div className="parameter-group">
+                      <label className="parameter-label">Thickness</label>
+                      <div className="parameter-control">
+                        <input
+                          type="range"
+                          min="10"
+                          max="500"
+                          step="10"
+                          value={swoosh.thickness}
+                          onChange={(e) => updateSwoosh(swoosh.id, { thickness: parseFloat(e.target.value) })}
+                          className="parameter-slider"
+                        />
+                        <span className="parameter-value">{Math.round(swoosh.thickness)}px</span>
+                      </div>
+                    </div>
+
+                    {/* Blend mode */}
+                    <div className="parameter-group">
+                      <label className="parameter-label">Blend Mode</label>
+                      <select
+                        className="parameter-select"
+                        value={swoosh.blendMode}
+                        onChange={(e) => updateSwoosh(swoosh.id, { blendMode: e.target.value })}
+                      >
+                        <option value="normal">Normal</option>
+                        <option value="multiply">Multiply</option>
+                        <option value="screen">Screen</option>
+                        <option value="overlay">Overlay</option>
+                        <option value="hard-light">Hard Light</option>
+                        <option value="soft-light">Soft Light</option>
+                        <option value="color-dodge">Color Dodge</option>
+                        <option value="color-burn">Color Burn</option>
+                        <option value="darken">Darken</option>
+                        <option value="lighten">Lighten</option>
+                        <option value="difference">Difference</option>
+                        <option value="exclusion">Exclusion</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
