@@ -199,10 +199,9 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({ collapsed }) => {
 
   return (
     <div className="left-sidebar">
-      {/* Header with Logo and Title */}
+      {/* Header with Title */}
       <div className="sidebar-header">
         <div className="header-content">
-          <img src="/assets/logo.svg" alt="Wise" className="wise-logo" />
           <div className="title-group">
             <h1 className="sidebar-title">TAPESTRY</h1>
             <h2 className="sidebar-title">GENERATOR</h2>
