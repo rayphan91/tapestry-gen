@@ -59,29 +59,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
-    // Call OpenAI DALL-E API
-    const response = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'dall-e-3',
-        prompt: prompt,
-        n: 1,
-        size: size,
-        quality: 'standard',
-        style: 'vivid',
-        response_format: 'b64_json',
-      }),
-    });
+    // Call OpenAI DALL-E API with retry logic for server errors
+    let response;
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (attempts < maxAttempts) {
+      attempts++;
+
+      response = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'dall-e-3',
+          prompt: prompt,
+          n: 1,
+          size: size,
+          quality: 'standard',
+          style: 'vivid',
+          response_format: 'b64_json',
+        }),
+      });
+
+      // If successful, break out of retry loop
+      if (response.ok) {
+        break;
+      }
+
+      // Check if it's a server error (5xx) that we should retry
+      if (response.status >= 500 && attempts < maxAttempts) {
+        console.log(`OpenAI server error (attempt ${attempts}/${maxAttempts}), retrying...`);
+        // Wait 2 seconds before retrying
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        continue;
+      }
+
+      // For non-retryable errors, break out
+      break;
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenAI API Error:', errorText);
       console.error('Status:', response.status);
       console.error('Prompt used:', prompt);
+      console.error('Attempts made:', attempts);
 
       // Parse error for better user feedback
       let errorMessage = 'Failed to generate image';
